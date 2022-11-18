@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Settings
+settings.cfg
+
+# Data saving torrent test info
+*/tests/data/*.txt
