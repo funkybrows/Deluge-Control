@@ -34,5 +34,5 @@ def test_add_torrent(deluge_client):
 
 
 def test_get_torrent_status(inferno_torrent, deluge_client):
-    result = deluge_client.call('core.get_torrent_status', inferno_torrent, ['name', 'state'])
+    result = deluge_client.get_torrent_status(inferno_torrent, ['name', 'state'])
     assert {key.decode('utf-8'): value.decode('utf-8') for key, value in result.items()} == {'name': 'inferno00dant_2', 'state': 'Seeding'}
