@@ -25,4 +25,7 @@ class DelugeClient():
 
         result = self.client.call('core.add_torrent_file_async', name, encoded_content, add_options)
         return result
+    
+    def remove_torrent(self, torrent_id, remove_data=False):
+        self.client.call('core.remove_torrent', torrent_id, remove_data=remove_data)
 
