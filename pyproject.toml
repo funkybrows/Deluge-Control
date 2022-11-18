@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "deluge-control"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "deluge_control"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+sonarr-announced = {git = "git+ssh://git@github.com/funkybrows/sonarr-announced.git"}
+sqlalchemy = "*"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
+pytest-asyncio = "^0.20.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
