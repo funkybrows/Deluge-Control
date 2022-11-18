@@ -9,9 +9,55 @@ class DelugeClient():
         "download_location",
         "move_completed"
     }
+
+    POSSIBLE_STATUS_KEYS = {
+        "completed_time",
+        "distributed_copies",
+        "download_location",
+        "download_payload_rate",
+        "eta",
+        "is_auto_managed",
+        "last_seen_complete",
+        "max_download_speed",
+        "max_upload_speed",
+        "name",
+        "num_peers",
+        "num_seeds",
+        "progress",
+        "queue",
+        "ratio",
+        "seeds_peers_ratio",
+        "state",
+        "time_added",
+        "time_since_transfer",
+        "total_done",
+        "total_peers",
+        "total_remaining",
+        "total_seeds",
+        "total_uploaded",
+        "total_wanted",
+        "tracker_host",
+        "upload_payload_rate",
+    }
     def __init__(self):
         self.client = deluge.get_deluge_client()
     
+    @classmethod
+    def get_approved_keys_dict(cls, keys, available):
+        approved = {}
+        for possible_key in keys:
+            if possible_key in available:
+                approved[possible_key] = keys.get(possible_key)
+        return approved
+
+    @classmethod
+    def get_approved_keys_list(cls, keys, available):
+        approved = []
+        for possible_key in keys:
+            if possible_key in available:
+                approved.append(possible_key)
+        return approved
+
     def add_torrent_file_async(self, name, file_path, **options):
         with open(file_path, 'rb') as f:
             content = f.read()
