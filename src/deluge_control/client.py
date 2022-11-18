@@ -63,15 +63,13 @@ class DelugeClient():
             content = f.read()
         encoded_content = base64.b64encode(content)
 
-        add_options = {}
-        if options:
-            for possible_add_option in self.POSSIBLE_ADD_OPTIONS:
-                if option_value:= options.get(possible_add_option):
-                    add_options[possible_add_option] = option_value
+        add_options = self.get_approved_keys_dict(options, self.POSSIBLE_ADD_OPTIONS) if options else {}
+        return self.client.call('core.add_torrent_file_async', name, encoded_content, add_options)
+    
 
         result = self.client.call('core.add_torrent_file_async', name, encoded_content, add_options)
         return result
     
     def remove_torrent(self, torrent_id, remove_data=False):
-        self.client.call('core.remove_torrent', torrent_id, remove_data=remove_data)
+        return self.client.call('core.remove_torrent', torrent_id, remove_data=remove_data)
 
