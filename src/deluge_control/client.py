@@ -66,10 +66,11 @@ class DelugeClient():
         add_options = self.get_approved_keys_dict(options, self.POSSIBLE_ADD_OPTIONS) if options else {}
         return self.client.call('core.add_torrent_file_async', name, encoded_content, add_options)
     
+    def get_torrent_status(self, torrent_id, keys):
+        add_keys = self.get_approved_keys_list(keys, self.POSSIBLE_STATUS_KEYS) if keys else []
+        return self.client.call('core.get_torrent_status', torrent_id, add_keys)
+        
 
-        result = self.client.call('core.add_torrent_file_async', name, encoded_content, add_options)
-        return result
-    
     def remove_torrent(self, torrent_id, remove_data=False):
         return self.client.call('core.remove_torrent', torrent_id, remove_data=remove_data)
 
