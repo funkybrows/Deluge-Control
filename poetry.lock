@@ -135,6 +135,17 @@ python-versions = ">=3.7"
 test = ["pytest (>=6)"]
 
 [[package]]
+name = "faker"
+version = "15.3.2"
+description = "Faker is a Python package that generates fake data for you."
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+python-dateutil = ">=2.4"
+
+[[package]]
 name = "flask"
 version = "0.12.5"
 description = "A microframework based on Werkzeug, Jinja2 and good intentions"
@@ -584,7 +595,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "3448a116cf456e036ba022c1c6300223d0e85fd3058b40e15399839f57fff977"
+content-hash = "d20754e881a6fdeec88a8889ef646a509894ccd07b6842f5c0d527e82ad6936d"
 
 [metadata.files]
 aiohttp = [
@@ -719,6 +730,10 @@ deluge-client = [
 exceptiongroup = [
     {file = "exceptiongroup-1.0.4-py3-none-any.whl", hash = "sha256:542adf9dea4055530d6e1279602fa5cb11dab2395fa650b8674eaec35fc4a828"},
     {file = "exceptiongroup-1.0.4.tar.gz", hash = "sha256:bd14967b79cd9bdb54d97323216f8fdf533e278df937aa2a90089e7d6e06e5ec"},
+]
+faker = [
+    {file = "Faker-15.3.2-py3-none-any.whl", hash = "sha256:43da04aae745018e8bded768e74c84423d9dc38e4c498a53439e749d90e20bc0"},
+    {file = "Faker-15.3.2.tar.gz", hash = "sha256:0094fe3340ad73c490d3ffccc59cc171b161acfccccd52925c70970ba23e6d6b"},
 ]
 flask = [
     {file = "Flask-0.12.5-py2.py3-none-any.whl", hash = "sha256:2c710d1d42317c802c43000daa16de9de6026146b344ab3376cbc6d18846b863"},
