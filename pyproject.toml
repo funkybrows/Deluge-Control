@@ -16,7 +16,9 @@ packages = [{include = "deluge_control"}]
 python = "^3.10"
 sonarr-announced = {git = "git+ssh://git@github.com/funkybrows/sonarr-announced.git"}
 sqlalchemy = "*"
-profig = "*"
+alembic = "^1.8"
+psycopg2 = "^2.9"
+python-dateutil = "^2.8"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "*"
