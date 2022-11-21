@@ -1,3 +1,4 @@
+import datetime as dt
 import random
 from unittest import mock
 from faker import Faker
@@ -24,15 +25,13 @@ def get_torrents_with(
     ret = {}
     if not torrent_dt or isinstance(torrent_dt, dt.datetime):
         use_dt = torrent_dt if torrent_dt else dt.datetime.utcnow()
-        epoch = str(use_dt.timestamp()).encode("utf-8")
+        epoch = use_dt.timestamp()
         torrent_dts = [epoch] * n_torrents
     elif isinstance(torrent_dt, (set, list, tuple)) and isinstance(
         torrent_dt[0], dt.datetime
     ):
         torrent_dts = torrent_dt
-        torrent_dts = [
-            str(torrent_dt.timestamp()).encode("utf-8") for torrent_dt in torrent_dts
-        ]
+        torrent_dts = [torrent_dt.timestamp() for torrent_dt in torrent_dts]
     else:
         raise ValueError(
             f"torrent_dt ({torrent_dt}) must be None, dt, or iterable of dts"
@@ -76,7 +75,15 @@ class TestGrabNewTorrents:
     @staticmethod
     def test_grab_only_new_torrents(deluge_client, movie_names, db_session):
         deluge_client.decode_torrent_data(
-            encoded_results := get_torrents_with(2, movie_names, ["Seeding"])
+            encoded_results := get_torrents_with(
+                2,
+                movie_names,
+                ("Seeding",),
+                torrent_dt=(
+                    (now := dt.datetime.utcnow()),
+                    now + dt.timedelta(minutes=1),
+                ),
+            )
         )
         with mock.patch(
             "deluge_control.client.DelugeClient.get_torrents_status"
@@ -91,3 +98,25 @@ class TestGrabNewTorrents:
             mock_torrents.return_value = encoded_results
             new_torrents = register_new_torrents(deluge_client, db_session)
             assert len(new_torrents) == 1 and first_torrent not in new_torrents
+
+    @staticmethod
+    def test_torrent_dt_saved_correctly(deluge_client, movie_names, db_session):
+        now = dt.datetime.utcnow()
+        deluge_client.decode_torrent_data(
+            encoded_results := get_torrents_with(
+                1,
+                movie_names,
+                ("Seeding",),
+                torrent_dt=(now,),
+            )
+        )
+        with mock.patch(
+            "deluge_control.client.DelugeClient.get_torrents_status"
+        ) as mock_torrents:
+            mock_torrents.return_value = {
+                (
+                    encoded_torrent_id := tuple(encoded_results.keys())[0]
+                ): encoded_results[encoded_torrent_id]
+            }
+            first_torrent = register_new_torrents(deluge_client, db_session)[0]
+            assert first_torrent.time_added == now
