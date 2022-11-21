@@ -41,19 +41,21 @@ class DelugeClient:
     def __init__(self):
         self.client = deluge.get_deluge_client()
 
-    @staticmethod
-    def decode_torrent_data(deluge_data):
-        ret = {}
-        for key, value in deluge_data.items():
-            if isinstance(value, list):
-                value = [val.decode("utf-8") for val in value]
-            elif isinstance(value, str):
-                value = value.decode("utf-8")
-            elif isinstance(value, dict):
-                value = {
-                    k.decode("utf-8"): val.decode("utf-8") for k, val in value.items()
-                }
-            ret[key.decode("utf-8")] = value
+    @classmethod
+    def decode_torrent_data(cls, deluge_data):
+        if isinstance(deluge_data, dict):
+            ret = {
+                cls.decode_torrent_data(key): cls.decode_torrent_data(value)
+                for key, value in deluge_data.items()
+            }
+
+        elif isinstance(deluge_data, list):
+            value = [cls.decode_torrent_data(val) for val in value]
+
+        elif isinstance(deluge_data, bytes):
+            ret = deluge_data.decode("utf-8")
+        else:
+            ret = deluge_data
         return ret
 
     @classmethod
