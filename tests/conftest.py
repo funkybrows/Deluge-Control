@@ -43,28 +43,28 @@ def db_session(setup_database, session):
     test_session.close()
 
 
-# @pytest.fixture(scope="session")
-# def deluge_client():
-#     return DelugeClient()
+@pytest.fixture(scope="session")
+def deluge_client():
+    return DelugeClient()
 
 
-# @pytest.fixture(scope="module")
-# def movie_names():
-#     ret = []
-#     format_choices = ["BluRay", "DVD"]
+@pytest.fixture(scope="module")
+def movie_names():
+    ret = []
+    format_choices = ["BluRay", "DVD"]
 
-#     for _ in range(10):
-#         ret.append(
-#             ".".join((fake.word() for _ in range(4)))
-#             + "."
-#             + ".".join(
-#                 (
-#                     fake.date("%Y"),
-#                     random.choice(video_qualities),
-#                     random.choice(format_choices),
-#                 )
-#             )
-#             + "."
-#             + ".".join((fake.word().upper() for _ in range(3)))
-#         )
-#     return ret
+    for _ in range(10):
+        ret.append(
+            ".".join((fake.word() for _ in range(4)))
+            + "."
+            + ".".join(
+                (
+                    fake.date("%Y"),
+                    random.choice(video_qualities),
+                    random.choice(format_choices),
+                )
+            )
+            + "."
+            + ".".join((fake.word().upper() for _ in range(3)))
+        )
+    return ret
