@@ -1,3 +1,4 @@
+import datetime as dt
 import logging
 
 from sqlalchemy.sql.expression import select
@@ -10,7 +11,7 @@ logger.setLevel(logging.DEBUG)
 
 def register_new_torrents(deluge_client, session):
     torrent_info = deluge_client.decode_torrent_data(
-        deluge_client.get_torrents_status(["state"])
+        deluge_client.get_torrents_status(["state", "name", "time_added"])
     )
     new_torrents = []
     with session.begin():
@@ -27,16 +28,24 @@ def register_new_torrents(deluge_client, session):
         if torrent_id not in results:
             try:
                 logger.debug(
-                    "ADDING TORRENT %s WITH NAME: %s, STATE: %s",
+                    "ADDING TORRENT %s WITH NAME: %s, STATE: %s, TIME_ADDED: %s",
                     torrent_id,
                     torrent_name := torrent_info[torrent_id]["name"],
                     torrent_state := torrent_info[torrent_id]["state"],
+                    (
+                        torrent_time_added := (
+                            dt.datetime.fromtimestamp(
+                                torrent_info[torrent_id]["time_added"]
+                            )
+                        )
+                    ).strftime("%Y:%m:%d @ %H:%M:%S"),
                 )
                 session.add(
                     new_torrent := Torrent(
                         torrent_id=torrent_id,
                         name=torrent_name,
                         state=StateChoices(torrent_state),
+                        time_added=torrent_time_added,
                     )
                 )
                 new_torrents.append(new_torrent)

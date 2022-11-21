@@ -16,6 +16,7 @@ class StateChoices(enum.Enum):
     Q = "Queued"
     ALLOC = "Allocating"
     MOV = "Moving"
+    PAUSE = "Paused"
 
 
 class Torrent(Base):
@@ -24,3 +25,4 @@ class Torrent(Base):
     torrent_id = Column(String(100), nullable=False, unique=True)
     name = Column(String(256), nullable=False)
     state = Column(Enum(StateChoices))
+    time_added = Column(DateTime)
