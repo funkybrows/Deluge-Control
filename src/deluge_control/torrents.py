@@ -14,11 +14,14 @@ def register_new_torrents(deluge_client, session):
     )
     new_torrents = []
     with session.begin():
-        results = session.execute(
-            select(Torrent.torrent_id).where(
-                Torrent.torrent_id.in_(list(torrent_info.keys()))
-            )
-        ).all()
+        results = [
+            unparsed_result.torrent_id
+            for unparsed_result in session.execute(
+                select(Torrent.torrent_id).where(
+                    Torrent.torrent_id.in_(list(torrent_info.keys()))
+                )
+            ).all()
+        ]
 
     for torrent_id in torrent_info:
         if torrent_id not in results:
