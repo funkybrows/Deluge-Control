@@ -78,8 +78,10 @@ class DelugeClient():
         )
 
     def get_torrent_status(self, torrent_id, keys):
-        add_keys = self.get_approved_keys_list(keys, self.POSSIBLE_STATUS_KEYS) if keys else []
-        return self.client.call('core.get_torrent_status', torrent_id, add_keys)
+        status_keys = (
+            self.get_approved_keys_list(keys, self.POSSIBLE_STATUS_KEYS) if keys else []
+        )
+        return self.client.call("core.get_torrent_status", torrent_id, status_keys)
         
 
     def remove_torrent(self, torrent_id, remove_data=False):
