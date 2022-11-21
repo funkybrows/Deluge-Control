@@ -90,5 +90,6 @@ class DelugeClient():
         return self.client.call("core.get_torrents_status", filters, status_keys)
 
     def remove_torrent(self, torrent_id, remove_data=False):
-        return self.client.call('core.remove_torrent', torrent_id, remove_data=remove_data)
-
+        return self.client.call(
+            "core.remove_torrent", torrent_id, remove_data=remove_data
+        )
