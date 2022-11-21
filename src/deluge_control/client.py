@@ -4,11 +4,9 @@ from sonarr_announced import deluge
 import os
 import os.path
 
-class DelugeClient():
-    POSSIBLE_ADD_OPTIONS = {
-        "download_location",
-        "move_completed"
-    }
+
+class DelugeClient:
+    POSSIBLE_ADD_OPTIONS = {"download_location", "move_completed"}
 
     POSSIBLE_STATUS_KEYS = {
         "completed_time",
@@ -39,9 +37,25 @@ class DelugeClient():
         "tracker_host",
         "upload_payload_rate",
     }
+
     def __init__(self):
         self.client = deluge.get_deluge_client()
-    
+
+    @staticmethod
+    def decode_torrent_data(deluge_data):
+        ret = {}
+        for key, value in deluge_data.items():
+            if isinstance(value, list):
+                value = [val.decode("utf-8") for val in value]
+            elif isinstance(value, str):
+                value = value.decode("utf-8")
+            elif isinstance(value, dict):
+                value = {
+                    k.decode("utf-8"): val.decode("utf-8") for k, val in value.items()
+                }
+            ret[key.decode("utf-8")] = value
+        return ret
+
     @classmethod
     def get_approved_keys_dict(cls, keys, available):
         approved = {}
