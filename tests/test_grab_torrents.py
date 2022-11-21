@@ -54,11 +54,21 @@ class TestGrabNewTorrents:
         ), f"{new_torrent.name} != {decoded_mock_torrent_name}"
         assert new_torrent.state == StateChoices.SEED
 
-    # @staticmethod
-    # def test_grab_only_new_torrents(deluge_client, movie_names, db_session):
-    #     full_results = deluge_client.decode_data(
-    #         get_torrents_with(2, movie_names, ["Seeding"])
-    #     )
+    @staticmethod
+    def test_grab_only_new_torrents(deluge_client, movie_names, db_session):
+        deluge_client.decode_torrent_data(
+            encoded_results := get_torrents_with(2, movie_names, ["Seeding"])
+        )
+        with mock.patch(
+            "deluge_control.client.DelugeClient.get_torrents_status"
+        ) as mock_torrents:
+            mock_torrents.return_value = {
+                (
+                    encoded_torrent_id := tuple(encoded_results.keys())[0]
+                ): encoded_results[encoded_torrent_id]
+            }
+            first_torrent = register_new_torrents(deluge_client, db_session)[0]
 
-
-# b'3270966a95ccf1a72493e4948e826508906a5a34': {b'name': b'Star Wars Andor (2022) S01E03 (2160p DSNP WEB-DL x265 HEVC 10bit DDP 5.1 Vyndros)'}
+            mock_torrents.return_value = encoded_results
+            new_torrents = register_new_torrents(deluge_client, db_session)
+            assert len(new_torrents) == 1 and first_torrent not in new_torrents
