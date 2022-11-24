@@ -2,6 +2,7 @@ include .env
 export
 
 CASES ?= .
+MIG_MESSAGE ?=
 
 create-db-user:
 	sudo adduser $(PG_USER); \
@@ -39,8 +40,14 @@ reset-postgres: drop-postgres-db create-postgres-db
 
 reset-test-postgres: drop-test-postgres-db create-test-postgres-db
 
-test:
-	set -a;
+import-env-vars:
+	set -a
 	. ./.env
 	set +a
+
+migrations: import-env-vars
+	cd src;	alembic revision --autogenerate -m "$(MIG_MESSAGE)"
+
+migrate: import-env-vars
+	cd src; alembic upgrade head
 	pytest $(CASES) 
