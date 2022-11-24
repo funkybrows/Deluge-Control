@@ -43,6 +43,14 @@ def db_session(setup_database, session):
     test_session.close()
 
 
+@pytest.fixture
+def db_5_sessions(setup_database, session):
+    yield (test_sessions := [session() for _ in range(10)])
+    for test_session in test_sessions:
+        test_session.rollback()
+        test_session.close()
+
+
 @pytest.fixture(scope="session")
 def deluge_client():
     return DelugeClient()
