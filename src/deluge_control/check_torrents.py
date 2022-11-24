@@ -1,0 +1,85 @@
+import asyncio
+import datetime as dt
+import logging
+from sqlalchemy.sql.expression import select
+from .client import DelugeClient
+from .models import StateChoices, Torrent, TorrentSnapshot
+from .session import get_session
+
+logger = logging.getLogger("deluge.check")
+
+
+def check_seeding_torrents(deluge_client, session):
+    with session.begin():
+        seeding_torrents = (
+            session.execute(
+                select(Torrent).where(
+                    Torrent.state == StateChoices.SEED,
+                    Torrent.next_check_time <= dt.datetime.utcnow(),
+                )
+            )
+            .scalars()
+            .all()
+        )
+        torrent_info = deluge_client.decode_torrent_data(
+            deluge_client.get_torrents_status(
+                ["total_uploaded", "total_seeds", "total_peers"],
+                id=[torrent.torrent_id for torrent in seeding_torrents],
+            )
+        )
+        new_torrent_snapshots = []
+        now = dt.datetime.utcnow()
+        next_check = now + dt.timedelta(seconds=60)
+        for torrent in seeding_torrents:
+            logger.info(
+                "ADDING SNAPSHOT %s FOR TORRENT: %s, TOTAL_UPLOAD: %s, SEEDS: %s, PEERS: %s",
+                torrent_id := torrent.torrent_id,
+                total_uploaded := torrent_info[torrent_id]["total_uploaded"],
+                total_seeds := torrent_info[torrent_id]["total_seeds"],
+                total_peers := torrent_info[torrent_id]["total_peers"],
+                (time_recorded := now).strftime("%Y:%m:%d @ %H:%M:%S"),
+            )
+            try:
+                session.add(
+                    new_torrent_snapshot := (
+                        TorrentSnapshot(
+                            torrent=torrent,
+                            total_uploaded=total_uploaded
+                            / 1024
+                            / 1024,  # Convert from byte to mega
+                            total_seeds=total_seeds,
+                            total_peers=total_peers,
+                            time_recorded=time_recorded,
+                        )
+                    )
+                )
+                new_torrent_snapshot.torrent.next_check_time = next_check
+            except Exception as exc:
+                logger.exception(
+                    "Could not add new torrent snapshot to session: torrent_id, %s",
+                    torrent.torrent_id,
+                )
+            else:
+                new_torrent_snapshots.append(new_torrent_snapshot)
+
+        try:
+            session.commit()
+            return new_torrent_snapshots
+        except Exception as exc:
+            logger.exception("Could not commit during check_seeding_torrents")
+            session.rollback()
+            return []
+
+
+async def check_continuously(default_interval=60):
+    deluge_client = DelugeClient()
+    await deluge_client.connect_with_retry()
+    while True:
+        logger.debug(
+            f"Making snapshots for ready torrents as of {dt.datetime.utcnow().strftime('%H:%M:%S')}"
+        )
+        check_seeding_torrents(deluge_client, get_session()())
+        logger.debug(
+            f"Waiting until {(dt.datetime.utcnow() + dt.timedelta(seconds=60)).strftime('%H:%M:%S')} to make snapshots for ready torrents"
+        )
+        await asyncio.sleep(default_interval)
