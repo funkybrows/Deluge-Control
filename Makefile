@@ -50,4 +50,9 @@ migrations: import-env-vars
 
 migrate: import-env-vars
 	cd src; alembic upgrade head
+
+run: import-env-vars
+	cd src; python3 main.py
+
+test: import-env-vars
 	pytest $(CASES) 
