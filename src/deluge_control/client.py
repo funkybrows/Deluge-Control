@@ -1,8 +1,13 @@
+import asyncio
 import base64
-from sonarr_announced import deluge
-
+import logging
 import os
 import os.path
+
+from deluge_client import DelugeRPCClient
+
+logger = logging.getLogger("Deluge")
+logger.setLevel(logging.DEBUG)
 
 
 class DelugeClient:
@@ -38,8 +43,23 @@ class DelugeClient:
         "upload_payload_rate",
     }
 
-    def __init__(self):
-        self.client = deluge.get_deluge_client()
+    def __init__(self, host=None, port=None, username=None, password=None):
+        self.client = DelugeRPCClient(
+            host or os.environ.get("DEFAULT_DELUGE_HOST"),
+            int(port or os.environ.get("DEFAULT_DELUGE_PORT")),
+            username or os.environ.get("DEFAULT_DELUGE_USERNAME"),
+            password or os.environ.get("DEFAULT_DELUGE_PASSWORD"),
+        )
+
+    async def connect_with_retry(self):
+        while not self.client.connected:
+            logger.debug("ATTEMPTING TO CONNECT TO CLIENT")
+            try:
+                self.client.connect()
+                logger.debug("CONNECTED TO CLIENT")
+            except Exception:
+                logger.exception("Failed to connect to deluge client")
+            await asyncio.sleep(1)
 
     @classmethod
     def decode_torrent_data(cls, deluge_data):
