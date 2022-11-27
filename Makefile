@@ -3,7 +3,15 @@ export
 
 CASES ?= .
 MIG_MESSAGE ?=
+# Alembic
+migrations: import-env-vars
+	cd src;	alembic revision --autogenerate -m "$(MIG_MESSAGE)"
 
+migrate: import-env-vars
+	cd src; alembic upgrade head
+
+
+# Postgres
 create-db-user:
 	sudo adduser $(PG_USER); \
  	echo "\
@@ -51,6 +59,7 @@ migrations: import-env-vars
 migrate: import-env-vars
 	cd src; alembic upgrade head
 
+# Python
 run: import-env-vars
 	cd src; python3 main.py
 
