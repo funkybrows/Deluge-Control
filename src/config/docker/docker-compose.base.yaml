@@ -1,0 +1,45 @@
+version: "3"
+services:
+  deluge-control:
+    image: docker.funkybrows.com/deluge-control:1.0.0
+    container_name: "deluge-control"
+    environment:
+      - DEFAULT_DELUGE_HOST=${DEFAULT_DELUGE_HOST}
+      - DEFAULT_DELUGE_PORT=${DEFAULT_DELUGE_PORT}
+      - DEFAULT_DELUGE_USERNAME=${DEFAULT_DELUGE_USERNAME}
+      - DEFAULT_DELUGE_PASSWORD=${DEFAULT_DELUGE_PASSWORD}
+      - PG_DRIVER=${PG_DRIVER}
+      - PG_PASSWORD=${PG_PASSWORD}
+      - PG_HOST=deluge-control-postgres
+      - PG_PORT=5432
+      - PG_NAME=deluge_control
+      - PG_USER=${PG_USER}
+    restart: unless-stopped
+    depends_on:
+      deluge-control-postgres:
+        condition: service_healthy
+    env_file: .env
+
+  deluge-control-postgres:
+    image: postgres:15-alpine
+    container_name: "deluge-control-postgres"
+    environment:
+      - POSTGRES_PASSWORD=${PG_PASSWORD}
+      - POSTGRES_USER=${PG_USER}
+    volumes:
+      - deluge-control-postgres-data:/var/lib/postgresql/data
+      - ./scripts/postgres:/docker-entrypoint-initdb.d
+
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${PG_USER} -d deluge_control"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - ${PG_PORT}:5432
+    env_file: .env
+
+volumes:
+  deluge-control-postgres-data:
+    driver: local
+  
