@@ -1,0 +1,21 @@
+ARG BASE_IMG
+FROM $BASE_IMG
+
+# Setup run script
+COPY "./src/config/docker/scripts/production-entrypoint.sh" /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+COPY pyproject.toml /app/
+COPY poetry.lock /app/
+
+WORKDIR /app/
+RUN --mount=type=ssh poetry install --without dev --no-interaction --no-ansi --no-root -v
+
+# Clean up
+RUN rm pyproject.toml poetry.lock
+
+COPY . /app/
+RUN rm -R tests
+WORKDIR /
+
+ENTRYPOINT [ "/bin/bash", "entrypoint.sh" ]

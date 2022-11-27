@@ -21,22 +21,6 @@ ENV POETRY_VERSION=1.2 \
     POETRY_VIRTUALENVS_CREATE=false
 RUN curl -sSL https://install.python-poetry.org | python3 - --git https://github.com/python-poetry/poetry.git@master;
 
-# Setup run script
-COPY "./src/config/docker/scripts/base-entrypoint.sh" /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-COPY pyproject.toml /app/
-COPY poetry.lock /app/
-
-WORKDIR /app/
-RUN --mount=type=ssh poetry install --without dev --no-interaction --no-ansi --no-root -v
-
-# Clean up
-RUN rm pyproject.toml poetry.lock
-
-COPY . /app/
-RUN rm -R tests
-WORKDIR /
 RUN mkdir logs
 
 ENTRYPOINT [ "/bin/bash", "entrypoint.sh" ]
