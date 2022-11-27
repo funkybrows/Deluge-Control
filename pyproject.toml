@@ -14,7 +14,7 @@ packages = [{include = "deluge_control"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-sonarr-announced = {git = "git+ssh://git@github.com/funkybrows/sonarr-announced.git"}
+sonarr-announced = {git = "git@github.com:funkybrows/sonarr-announced.git"}
 sqlalchemy = "*"
 alembic = "^1.8"
 psycopg2 = "^2.9"
