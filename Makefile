@@ -1,5 +1,5 @@
 include .env
-export
+export 
 
 CASES ?= .
 MIG_MESSAGE ?=
@@ -8,7 +8,7 @@ DOCKER_PROJECT_ROOT_FROM_CTX ?= ../Deluge-Control
 DOCKER_CTX_FROM_PYTHON_DOCKER ?= ..
 DOCKER_TAG_VERSION ?= latest
 DOCKER_PYTHON_DOCKER_FROM_PROJECT_ROOT ?= ../Python-Docker
-ifndef WATCH_DOCKER
+ifndef DOCKER_WATCH
 DOCKER_NO_WATCH = -d
 endif
 DOCKER_REGISTRY ?=
