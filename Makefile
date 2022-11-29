@@ -23,6 +23,7 @@ migrate: import-env-vars
 	cd src; alembic upgrade head
 
 # Docker
+build-base-image:
 	cd $(DOCKER_PYTHON_DOCKER_FROM_PROJECT_ROOT); DOCKER_REGISTRY=$(DOCKER_REGISTRY) make build-base-image
 
 
