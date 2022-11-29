@@ -3,7 +3,9 @@ export
 
 CASES ?= .
 MIG_MESSAGE ?=
-DOCKER_TAG_VERSION ?=
+DOCKER_PROJECT_ROOT_FROM_CTX ?= ../Deluge-Control
+DOCKER_CTX_FROM_PYTHON_DOCKER ?= ..
+DOCKER_PYTHON_DOCKER_FROM_PROJECT_ROOT ?= ../Python-Docker
 ifndef WATCH_DOCKER
 WATCH_DOCKER = -d
 endif
@@ -16,12 +18,7 @@ migrate: import-env-vars
 	cd src; alembic upgrade head
 
 # Docker
-build-docker-base:
-	DOCKER_BUILDKIT=1 docker build -t docker.funkybrows.com/deluge-control:$(DOCKER_TAG_VERSION) --ssh default=$(HOME)/.ssh/id_rsa -f src/config/docker/Dockerfile.base .
-deploy-docker-base:
-	docker compose -f src/config/docker/docker-compose.base.yaml up $(WATCH_DOCKER)
-teardown-docker-base:
-	docker compose -f src/config/docker/docker-compose.base.yaml down
+	cd $(DOCKER_PYTHON_DOCKER_FROM_PROJECT_ROOT); DOCKER_REGISTRY=$(DOCKER_REGISTRY) make build-base-image
 
 
 
