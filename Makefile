@@ -60,8 +60,8 @@ teardown-project:
 
 
 # Python
-run: import-env-vars
+run:
 	cd src; python3 main.py
 
-test: import-env-vars
+test:
 	pytest $(CASES) 
