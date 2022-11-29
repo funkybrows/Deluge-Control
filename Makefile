@@ -1,11 +1,20 @@
 include .env
 export 
 
+ifdef DOCKER_COMMON_ENV_PATH
+include $(DOCKER_COMMON_ENV_PATH)
+endif
+
+ifdef DOCKER_SPECIFIC_ENV_PATH
+include $(DOCKER_SPECIFIC_ENV_PATH)
+endif
+
 CASES ?= .
 MIG_MESSAGE ?=
 DOCKER_APP_DEST ?= /app
-DOCKER_PROJECT_ROOT_FROM_CTX ?= ../Deluge-Control
 DOCKER_CTX_FROM_PYTHON_DOCKER ?= ..
+DOCKER_LOCAL_CMD ?= /bin/bash
+DOCKER_PROJECT_ROOT_FROM_CTX ?= ../Deluge-Control
 DOCKER_TAG_VERSION ?= latest
 DOCKER_PYTHON_DOCKER_FROM_PROJECT_ROOT ?= ../Python-Docker
 ifndef DOCKER_WATCH
@@ -58,6 +67,10 @@ teardown-project:
 		DOCKER_SPECIFIC_ENV_PATH=$(DOCKER_CTX_FROM_PYTHON_DOCKER)/$(DOCKER_PROJECT_ROOT_FROM_CTX)/src/config/docker/env/$(NAMESPACE).env \
 		make teardown-project
 
+launch-local-project:
+	docker compose \
+		-f src/config/docker/compose/docker-compose.local.yaml \
+		run -it ${PROJECT_NAME} $(DOCKER_LOCAL_CMD)
 
 # Python
 run:
