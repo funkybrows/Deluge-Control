@@ -52,11 +52,11 @@ deploy-project:
 		PROJECT_NAME=$(PROJECT_NAME) \
 	make deploy-project
 
-
-import-env-vars:
-	set -a
-	. ./.env
-	set +a
+teardown-project:
+	cd $(DOCKER_PYTHON_DOCKER_FROM_PROJECT_ROOT); \
+		DOCKER_COMMON_ENV_PATH=$(DOCKER_CTX_FROM_PYTHON_DOCKER)/$(DOCKER_PROJECT_ROOT_FROM_CTX)/src/config/docker/env/.env \
+		DOCKER_SPECIFIC_ENV_PATH=$(DOCKER_CTX_FROM_PYTHON_DOCKER)/$(DOCKER_PROJECT_ROOT_FROM_CTX)/src/config/docker/env/$(NAMESPACE).env \
+		make teardown-project
 
 
 # Python
