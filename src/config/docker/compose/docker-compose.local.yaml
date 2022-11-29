@@ -1,0 +1,46 @@
+version: "3"
+services:
+  deluge-control:
+    image: ${DOCKER_REGISTRY}/${PROJECT_NAME}/${NAMESPACE}:${DOCKER_TAG_VERSION}
+    container_name: "${PROJECT_NAME}-${NAMESPACE}"
+    environment:
+      - DEFAULT_DELUGE_HOST=${DEFAULT_DELUGE_HOST}
+      - DEFAULT_DELUGE_PORT=${DEFAULT_DELUGE_PORT}
+      - DEFAULT_DELUGE_USERNAME=${DEFAULT_DELUGE_USERNAME}
+      - DEFAULT_DELUGE_PASSWORD=${DEFAULT_DELUGE_PASSWORD}
+      - DELUGE_TESTS_ROOT_DIR=${DELUGE_TESTS_ROOT_DIR}
+      - PG_DRIVER=psycopg2
+      - PG_PASSWORD=${PG_PASSWORD}
+      - PG_HOST=${PROJECT_NAME}-postgres
+      - PG_PORT=5432
+      - PG_NAME=${PG_NAME}
+      - PG_TEST_NAME=test-${PG_NAME}
+      - PG_USER=${PG_USER}
+    volumes:
+      - "${DOCKER_APP_SOURCE_FROM_COMPOSE}:${DOCKER_APP_DEST}"
+    depends_on:
+      deluge-control-postgres:
+        condition: service_healthy
+
+  deluge-control-postgres:
+    image: postgres:15-alpine
+    container_name: "${PROJECT_NAME}-${NAMESPACE}-postgres"
+    environment:
+      - POSTGRES_PASSWORD=${PG_PASSWORD}
+      - POSTGRES_USER=${PG_USER}
+      - PG_NAME=${PG_NAME}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ../scripts/postgres/${NAMESPACE}:/docker-entrypoint-initdb.d
+
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${PG_USER} -d ${PG_NAME}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - ${PG_PORT}:5432
+
+volumes:
+  postgres-data:
+    driver: local
