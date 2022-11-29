@@ -3,12 +3,17 @@ export
 
 CASES ?= .
 MIG_MESSAGE ?=
+DOCKER_APP_DEST ?= /app
 DOCKER_PROJECT_ROOT_FROM_CTX ?= ../Deluge-Control
 DOCKER_CTX_FROM_PYTHON_DOCKER ?= ..
+DOCKER_TAG_VERSION ?= latest
 DOCKER_PYTHON_DOCKER_FROM_PROJECT_ROOT ?= ../Python-Docker
 ifndef WATCH_DOCKER
-WATCH_DOCKER = -d
+DOCKER_NO_WATCH = -d
 endif
+DOCKER_REGISTRY ?=
+NAMESPACE ?=
+PROJECT_NAME ?=
 
 # Alembic
 migrations: import-env-vars
