@@ -14,7 +14,6 @@ services:
       - PG_HOST=${PROJECT_NAME}-postgres
       - PG_PORT=5432
       - PG_NAME=${PG_NAME}
-      - PG_TEST_NAME=test-${PG_NAME}
       - PG_USER=${PG_USER}
     volumes:
       - "${DOCKER_APP_SOURCE_FROM_COMPOSE}:${DOCKER_APP_DEST}"
