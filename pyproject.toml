@@ -19,6 +19,7 @@ alembic = "^1.8"
 psycopg2 = "^2.9"
 python-dateutil = "^2.8"
 deluge-client = "^1.9"
+aio-pika-wrapper = {git = "https://gitlab.com/jayd-tech/aio-pika-wrapper.git"}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "*"
