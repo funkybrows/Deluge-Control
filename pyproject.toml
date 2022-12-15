@@ -10,7 +10,7 @@ description = ""
 authors = ["Your Name <you@example.com>"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "deluge_control"}]
+packages = [{include = "deluge_control", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
