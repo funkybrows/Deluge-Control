@@ -1,0 +1,64 @@
+import asyncio
+import datetime as dt
+import os
+import logging
+from unittest import mock
+
+import pytest
+from tenacity import retry, stop_after_attempt, wait_fixed
+from aio_pika_wrapper.client import AioClient, AioConnectionPool
+from deluge_control.rabbit import AioDownloader
+
+LOG_FORMAT = (
+    "%(levelname) -10s %(asctime)s %(name) -30s %(funcName) "
+    "-35s %(lineno) -5d: %(message)s"
+)
+
+LOGGER = logging.getLogger(__name__)
+AIO_CLIENT_LOGGER = logging.getLogger("aio_pika_wrapper.client")
+handler = logging.FileHandler("/logs/debug.log", mode="w")
+LOGGER.setLevel(logging.DEBUG)
+LOGGER.addHandler(handler)
+AIO_CLIENT_LOGGER.setLevel(logging.DEBUG)
+AIO_CLIENT_LOGGER.addHandler(handler)
+RPC_LOGGER = logging.getLogger("deluge.rpc")
+RPC_LOGGER.setLevel(logging.DEBUG)
+RPC_LOGGER.addHandler(handler)
+DELUGE_CLIENT_LOGGER = logging.getLogger("deluge.client")
+DELUGE_CLIENT_LOGGER.setLevel(logging.DEBUG)
+DELUGE_CLIENT_LOGGER.addHandler(handler)
+
+
+@mock.patch("deluge_control.client.DelugeClient.add_torrent_url")
+@pytest.mark.asyncio
+async def test_download_torrent(mock_add_torrent):
+    message = {
+        "name": "Abbott Elementary S02E07 1080p x265-Elite",
+        "torrent_url": os.environ.get(
+            "TEST_TL_TORRENT_URL",
+            "'https://www.torrentleech.org/rss/download/123456789/1234a12abcde1ab1a123/Abbott+Elementary+S02E07+1080p+x265-Elite.torrent",
+        ),
+        "date": dt.datetime.now().isoformat(),
+        "indexer": "TL",
+    }
+
+    @retry(reraise=True, stop=stop_after_attempt(3), wait=wait_fixed(3))
+    async def assert_w_retry():
+        mock_add_torrent.assert_called_with(message["torrent_url"])
+
+    pool = AioConnectionPool(3)
+    aio_consumer = AioDownloader(
+        exchange_name="test-exchange", client_name="Test_Download", pool=pool
+    )
+    await aio_consumer.wait_until_ready(timeout=5)
+    asyncio.create_task(aio_consumer.start_consuming())
+    await aio_consumer.wait_until_consuming()
+    aio_publisher = AioClient("test-exchange", client_name="TestPublisher", pool=pool)
+    await aio_publisher.wait_until_ready()
+    await aio_publisher.publish_message(
+        "torrent.download.url.tl", message, content_type="application/json"
+    )
+    try:
+        await assert_w_retry()
+    finally:
+        await pool.close()
