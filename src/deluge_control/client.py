@@ -6,8 +6,16 @@ import os.path
 
 from deluge_client import DelugeRPCClient
 
-logger = logging.getLogger("Deluge")
-logger.setLevel(logging.DEBUG)
+logger = logging.getLogger("deluge.client")
+
+DELUGE_CLIENT = None
+
+
+def get_deluge_client():
+    global DELUGE_CLIENT
+    if not DELUGE_CLIENT:
+        DELUGE_CLIENT = DelugeClient()
+    return DELUGE_CLIENT
 
 
 class DelugeClient:
@@ -97,6 +105,7 @@ class DelugeClient:
     def add_torrent_file_async(self, name, file_path=None, file_dump=None, **options):
         if not file_path or file_dump:
             raise ValueError("Either file path or dump required")
+
         if file_path:
             with open(file_path, "rb") as f:
                 content = f.read()
