@@ -32,3 +32,32 @@ class AioDownloader(AioClient):
         )
         if exchange:
             await self.set_exchange(self._exchange_name)
+
+    async def start_consuming(self):
+        async def callback(message):
+            async with message.process():
+                if message.content_type == "application/json":
+                    logger.info(
+                        "GOT MESSAGE: %s", message_info := json.loads(message.body)
+                    )
+                    try:
+                        deluge_client = get_deluge_client()
+                        deluge_client.add_torrent_url(message_info["torrent_url"])
+
+                    except:
+                        logger.exception(
+                            "COULD NOT DOWNLOAD TORRENT: %s", message_info["name"]
+                        )
+
+        queue = await self.declare_queue(
+            durable=True, exclusive=True, auto_delete=True, timeout=self.TIMEOUT
+        )
+        await self.bind_queue(
+            queue.name,
+            exchange_name=self._exchange_name,
+            routing_key="torrent.download.*.*",
+        )
+        await super().start_consuming(queue.name, callback)
+
+    async def wait_until_consuming(self, timeout=5):
+        await self._wait_until_state(AsyncState.CONSUMING, timeout=timeout)
