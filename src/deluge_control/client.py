@@ -122,6 +122,15 @@ class DelugeClient:
             "core.add_torrent_file_async", name, encoded_content, add_options
         )
 
+    def add_torrent_url(self, file_url, **options):
+        add_options = (
+            self.get_approved_keys_dict(options, self.POSSIBLE_ADD_OPTIONS)
+            if options
+            else {}
+        )
+
+        return self.client.call("core.add_torrent_url", file_url, add_options)
+
     def get_torrent_status(self, torrent_id, keys):
         status_keys = (
             self.get_approved_keys_list(keys, self.POSSIBLE_STATUS_KEYS) if keys else []
