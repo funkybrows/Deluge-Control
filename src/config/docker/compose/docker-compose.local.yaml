@@ -47,6 +47,7 @@ services:
       retries: 5
     ports:
       - ${PG_PORT}:5432
+    restart: unless-stopped
 
   deluge-control-rabbitmq:
     image: rabbitmq:3.11
