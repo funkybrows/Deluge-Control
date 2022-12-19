@@ -12,7 +12,7 @@ services:
       - PG_DRIVER=psycopg2
       - PG_PASSWORD=${PG_PASSWORD}
       - PG_HOST=${PROJECT_NAME}-postgres
-      - PG_PORT=5432
+      - PG_PORT=${PG_PORT}
       - PG_NAME=${PG_NAME}
       - PG_USER=${PG_USER}
       - RABBITMQ_USER=${RABBITMQ_USER}
