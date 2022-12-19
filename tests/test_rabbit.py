@@ -7,6 +7,7 @@ from unittest import mock
 import pytest
 from tenacity import retry, stop_after_attempt, wait_fixed
 from aio_pika_wrapper.client import AioClient, AioConnectionPool
+from deluge_control.client import get_deluge_client
 from deluge_control.rabbit import AioDownloader
 
 LOG_FORMAT = (
@@ -38,6 +39,7 @@ MESSAGE = {
     "indexer": "TL",
 }
 
+
 @mock.patch("deluge_control.client.DelugeClient.add_torrent_url")
 @pytest.mark.asyncio
 async def test_download_torrent(mock_add_torrent):
@@ -63,10 +65,30 @@ async def test_download_torrent(mock_add_torrent):
         await aio_consumer.delete_exchange("test-exchange", if_unused=False)
         await pool.close()
 
+
+@pytest.mark.asyncio
+async def test_download_real_torrent():
+    if not os.environ.get("TEST_TL_TORRENT_URL"):
+        assert False, "NO TEST_TL_TORRENT_URL"
+    deluge_client = get_deluge_client()
+
+    def get_torrent_id():
+        torrents = deluge_client.get_torrents_status(("name",))
+        torrent_data = deluge_client.decode_torrent_data(torrents)
+        for torrent_id, values in torrent_data.items():
+            if "Abbott.Elementary.S02E07" in values["name"]:
+                return torrent_id
+
+    def cleanup_client():
+        torrent_id = get_torrent_id()
+        if torrent_id:
+            deluge_client.remove_torrent(torrent_id, remove_data=False)
+
     @retry(reraise=True, stop=stop_after_attempt(3), wait=wait_fixed(3))
     async def assert_w_retry():
-        mock_add_torrent.assert_called_with(message["torrent_url"])
+        assert get_torrent_id()
 
+    cleanup_client()
     pool = AioConnectionPool(3)
     aio_consumer = AioDownloader(
         exchange_name="test-exchange", client_name="Test_Download", pool=pool
@@ -77,9 +99,12 @@ async def test_download_torrent(mock_add_torrent):
     aio_publisher = AioClient("test-exchange", client_name="TestPublisher", pool=pool)
     await aio_publisher.wait_until_ready()
     await aio_publisher.publish_message(
-        "torrent.download.url.tl", message, content_type="application/json"
+        "torrent.download.url.tl",
+        {**MESSAGE, "download_options": {"add_in_paused_state": True}},
+        content_type="application/json",
     )
     try:
         await assert_w_retry()
     finally:
+        await aio_consumer.delete_exchange("test-exchange", if_unused=False)
         await pool.close()
