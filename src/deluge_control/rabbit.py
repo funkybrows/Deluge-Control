@@ -22,6 +22,7 @@ class AioDownloader(AioClient):
         self.declare_exchange_name = (
             exchange_name  # not to be confused w/ AioPikaClient._exchange_name
         )
+        self._queue = None
 
     async def connect(self):
         await super().connect()
@@ -33,7 +34,15 @@ class AioDownloader(AioClient):
             timeout=self.TIMEOUT,
         )
         if exchange:
-            await self.set_exchange(self._exchange_name)
+            self.queue = await self.declare_queue(
+                durable=True, exclusive=True, auto_delete=True, timeout=self.TIMEOUT
+            )
+            await self.bind_queue(
+                self.queue.name,
+                exchange_name=self.declare_exchange_name,
+                routing_key="torrent.download.*.*",
+            )
+            await self.set_exchange(self.declare_exchange_name)
 
     async def start_consuming(self):
         async def callback(message):
