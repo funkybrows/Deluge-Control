@@ -53,7 +53,10 @@ class AioDownloader(AioClient):
                     )
                     try:
                         deluge_client = get_deluge_client()
-                        deluge_client.add_torrent_url(message_info["torrent_url"])
+                        deluge_client.add_torrent_url(
+                            message_info["torrent_url"],
+                            **message_info.get("download_options", {}),
+                        )
 
                     except:
                         logger.exception(
