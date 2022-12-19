@@ -60,15 +60,7 @@ class AioDownloader(AioClient):
                             "COULD NOT DOWNLOAD TORRENT: %s", message_info["name"]
                         )
 
-        queue = await self.declare_queue(
-            durable=True, exclusive=True, auto_delete=True, timeout=self.TIMEOUT
-        )
-        await self.bind_queue(
-            queue.name,
-            exchange_name=self._exchange_name,
-            routing_key="torrent.download.*.*",
-        )
-        await super().start_consuming(queue.name, callback)
+        await super().start_consuming(self.queue.name, callback)
 
     async def wait_until_consuming(self, timeout=5):
         await self._wait_until_state(AsyncState.CONSUMING, timeout=timeout)
