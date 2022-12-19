@@ -27,6 +27,7 @@ services:
         condition: service_healthy
       deluge-control-rabbitmq:
         condition: service_healthy
+    restart: unless-stopped
 
   deluge-control-postgres:
     image: postgres:15-alpine
@@ -59,11 +60,11 @@ services:
       - ${AMQP_PORT}:5672
       - ${PROMETHEUS_PORT}:15672
     healthcheck:
-      test: [ "CMD", "rabbitmqctl", "status"]
+      test: [ "CMD", "rabbitmqctl", "status" ]
       interval: 10s
       timeout: 10s
       retries: 5
-
+    restart: unless-stopped
 
 volumes:
   postgres-data:
