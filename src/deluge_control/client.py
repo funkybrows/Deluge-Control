@@ -19,7 +19,11 @@ def get_deluge_client():
 
 
 class DelugeClient:
-    POSSIBLE_ADD_OPTIONS = {"download_location", "move_completed"}
+    POSSIBLE_ADD_OPTIONS = {
+        "download_location",
+        "move_completed",
+        "add_in_paused_state",
+    }
 
     POSSIBLE_STATUS_KEYS = {
         "completed_time",
