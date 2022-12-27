@@ -41,7 +41,7 @@ services:
       - POSTGRES_USER=${PG_USER}
       - PG_NAME=${PG_NAME}
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - deluge-control-local-postgres-data:/var/lib/postgresql/data
       - ../scripts/postgres/${NAMESPACE}:/docker-entrypoint-initdb.d
 
     healthcheck:
@@ -72,5 +72,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  postgres-data:
+  deluge-control-local-postgres-data:
     driver: local
