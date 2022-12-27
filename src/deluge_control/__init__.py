@@ -1,8 +1,8 @@
-from pathlib import Path
-from os import path
 import logging.config
 
-log_file_path = path.join(
-    Path(__file__).parent.parent.absolute(), "config", "logging.conf"
+from deluge_control import utils
+
+logging.config.fileConfig(
+    f"{utils.get_config_folder_path()}/logging.conf",
+    defaults={"log_folder_path": utils.get_log_folder_path()},
 )
-logging.config.fileConfig(log_file_path)
