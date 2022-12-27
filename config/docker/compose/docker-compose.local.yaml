@@ -4,6 +4,7 @@ services:
     image: ${DOCKER_REGISTRY}/${PROJECT_NAME}/${NAMESPACE}:${DOCKER_TAG_VERSION}
     container_name: "${PROJECT_NAME}-${NAMESPACE}"
     environment:
+      - CONFIG_FOLDER_PATH=${CONFIG_FOLDER_PATH}
       - DEFAULT_DELUGE_HOST=${DEFAULT_DELUGE_HOST}
       - DEFAULT_DELUGE_PORT=${DEFAULT_DELUGE_PORT}
       - DEFAULT_DELUGE_USERNAME=${DEFAULT_DELUGE_USERNAME}
@@ -12,7 +13,6 @@ services:
       - PG_DRIVER=psycopg2
       - PG_PASSWORD=${PG_PASSWORD}
       - PG_HOST=${PROJECT_NAME}-postgres
-      - PG_PORT=${PG_PORT}
       - PG_NAME=${PG_NAME}
       - PG_USER=${PG_USER}
       - RABBITMQ_USER=${RABBITMQ_USER}
@@ -20,8 +20,12 @@ services:
       - RABBITMQ_HOST=${RABBITMQ_HOST}
       - RABBIT_EXCHANGE=${RABBIT_EXCHANGE}
       - TEST_TL_TORRENT_URL=${TEST_TL_TORRENT_URL}
+
     volumes:
       - "${DOCKER_APP_SOURCE_FROM_COMPOSE}:${DOCKER_APP_DEST}"
+      - "${DOCKER_USER_CONFIG_PATH_FROM_COMPOSE}:/root/.${PROJECT_NAME}/config"
+      - "./logs/:/root/.${PROJECT_NAME}/logs"
+
     depends_on:
       deluge-control-postgres:
         condition: service_healthy
