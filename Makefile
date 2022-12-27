@@ -24,6 +24,7 @@ endif
 DOCKER_REGISTRY ?=
 NAMESPACE ?=
 PROJECT_NAME ?= deluge-control
+RABBIT_EXCHANGE ?=
 
 # Alembic
 migrations: import-env-vars
@@ -76,6 +77,7 @@ launch-local-project:
 	DOCKER_USER_CONFIG_PATH_FROM_COMPOSE=$(DOCKER_USER_CONFIG_PATH_FROM_COMPOSE) \
 	NAMESPACE=$(NAMESPACE) \
 	PROJECT_NAME=$(PROJECT_NAME) \
+	RABBIT_EXCHANGE=$(RABBIT_EXCHANGE) \
 	docker compose \
 		-f config/docker/compose/docker-compose.local.yaml \
 		run -it ${PROJECT_NAME} $(DOCKER_LOCAL_CMD)
