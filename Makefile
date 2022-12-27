@@ -12,6 +12,7 @@ endif
 CASES ?= .
 MIG_MESSAGE ?=
 DOCKER_APP_DEST ?= /app
+DOCKER_APP_SOURCE_FROM_COMPOSE ?=
 DOCKER_CTX_FROM_PYTHON_DOCKER ?= ..
 DOCKER_LOCAL_CMD ?= /bin/bash
 DOCKER_PROJECT_ROOT_FROM_CTX ?= ../Deluge-Control
@@ -22,7 +23,7 @@ DOCKER_NO_WATCH = -d
 endif
 DOCKER_REGISTRY ?=
 NAMESPACE ?=
-PROJECT_NAME ?=
+PROJECT_NAME ?= deluge-control
 
 # Alembic
 migrations: import-env-vars
@@ -68,8 +69,15 @@ teardown-project:
 		make teardown-project
 
 launch-local-project:
+	DOCKER_APP_DEST=${DOCKER_APP_DEST} \
+	DOCKER_APP_SOURCE_FROM_COMPOSE=$(DOCKER_APP_SOURCE_FROM_COMPOSE) \
+	DOCKER_REGISTRY=$(DOCKER_REGISTRY) \
+	DOCKER_TAG_VERSION=$(DOCKER_TAG_VERSION) \
+	DOCKER_USER_CONFIG_PATH_FROM_COMPOSE=$(DOCKER_USER_CONFIG_PATH_FROM_COMPOSE) \
+	NAMESPACE=$(NAMESPACE) \
+	PROJECT_NAME=$(PROJECT_NAME) \
 	docker compose \
-		-f src/config/docker/compose/docker-compose.local.yaml \
+		-f config/docker/compose/docker-compose.local.yaml \
 		run -it ${PROJECT_NAME} $(DOCKER_LOCAL_CMD)
 
 # Python
