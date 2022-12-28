@@ -9,13 +9,24 @@ def get_torrents_by_id(n_torrents):
     ]
 
     return {
-        "".join(random.choice(random_list) for _ in range(50)).encode("utf-8"): []
+        "".join(random.choice(random_list) for _ in range(50)): []
         for _ in range(n_torrents)
     }
 
 
 import datetime as dt
 import random
+
+
+def encode_torrent_data(torrent_data_dict):
+    ret = {}
+    for torrent_id, torrent_data in torrent_data_dict.items():
+        ret[torrent_id.encode("utf-8")] = (encoded_data_dict := {})
+        for key, value in torrent_data.items():
+            encoded_data_dict[key.encode("utf-8")] = (
+                value.encode("utf-8") if isinstance(value, str) else value
+            )
+    return ret
 
 
 def get_torrents_with(
@@ -40,17 +51,17 @@ def get_torrents_with(
         name_options = random.sample(name_options, n_torrents)
     for i, torrent_id in enumerate(get_torrents_by_id(n_torrents)):
         ret[torrent_id] = (torrent_info := {})
-        torrent_info["state".encode("utf-8")] = random.choice(
+        torrent_info["state"] = random.choice(
             (
                 state_options
                 or state_options
                 or [member.value for member in list(StateChoices)]
             )
-        ).encode("utf-8")
+        )
         if name_options:
-            torrent_info["name".encode("utf-8")] = name_options[i].encode("utf-8")
-        torrent_info["time_added".encode("utf-8")] = torrent_dts[i]
-    return ret
+            torrent_info["name"] = name_options[i]
+        torrent_info["time_added"] = torrent_dts[i]
+    return encode_torrent_data(ret)
 
 
 def patch_torrents_status():

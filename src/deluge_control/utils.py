@@ -1,7 +1,7 @@
 import os
 import os.path
 
-PROJECT_NAME = "deluge-control"
+PROJECT_NAME = "deluge_control"
 
 
 def get_config_folder_path():
