@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import os
@@ -53,6 +54,7 @@ class AioDownloader(AioClient):
                     )
                     try:
                         deluge_client = get_deluge_client()
+                        await asyncio.sleep(10)
                         deluge_client.add_torrent_url(
                             message_info["torrent_url"],
                             **message_info.get("download_options", {}),
