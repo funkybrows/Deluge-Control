@@ -9,6 +9,7 @@ from tenacity import retry, stop_after_attempt, wait_fixed
 from aio_pika_wrapper.client import AioClient, AioConnectionPool
 from deluge_control.client import get_deluge_client
 from deluge_control.rabbit import AioDownloader
+from deluge_control import utils
 
 LOG_FORMAT = (
     "%(levelname) -10s %(asctime)s %(name) -30s %(funcName) "
@@ -17,7 +18,7 @@ LOG_FORMAT = (
 
 LOGGER = logging.getLogger(__name__)
 AIO_CLIENT_LOGGER = logging.getLogger("aio_pika_wrapper.client")
-handler = logging.FileHandler("/logs/debug.log", mode="w")
+handler = logging.FileHandler(f"{utils.get_log_folder_path()}/debug.log", mode="w")
 LOGGER.setLevel(logging.DEBUG)
 LOGGER.addHandler(handler)
 AIO_CLIENT_LOGGER.setLevel(logging.DEBUG)
