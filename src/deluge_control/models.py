@@ -1,11 +1,14 @@
 import datetime as dt
 import enum
+import logging
 
 from sqlalchemy import Column, ForeignKey
 from sqlalchemy.types import DateTime, Enum, Integer, String
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
+
+logger = logging.getLogger("deluge.models")
 
 
 class StateChoices(enum.Enum):
