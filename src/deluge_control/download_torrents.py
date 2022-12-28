@@ -14,3 +14,8 @@ def get_aio_downloader():
             client_name=f'{os.environ.get("PROJECT NAME", "Torrenting")} Downloader',
         )
     return AIO_DOWNLOADER
+
+async def download_torrents():
+    aio_downloader = get_aio_downloader()
+    await aio_downloader.wait_until_ready(timeout=5)
+    await aio_downloader.start_consuming()
