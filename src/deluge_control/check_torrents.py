@@ -44,9 +44,10 @@ def check_seeding_torrents(deluge_client, session):
         now = dt.datetime.utcnow()
         next_check = now + dt.timedelta(seconds=60)
         for torrent in seeding_torrents:
+            torrent_id = torrent.torrent_id
             logger.info(
                 "ADDING SNAPSHOT %s FOR TORRENT: %s, TOTAL_UPLOAD: %s, SEEDS: %s, PEERS: %s",
-                torrent_id := torrent.torrent_id,
+                torrent.name,
                 total_uploaded := torrent_info[torrent_id]["total_uploaded"],
                 total_seeds := torrent_info[torrent_id]["total_seeds"],
                 total_peers := torrent_info[torrent_id]["total_peers"],
