@@ -36,6 +36,15 @@ class Torrent(Base):
         "TorrentSnapshot", back_populates="torrent", passive_deletes=True
     )
 
+    def set_state(self, name):
+        logger.debug(
+            "setting state of %s from %s to %s",
+            self.torrent_id,
+            self.state,
+            StateChoices(name),
+        )
+        self.state = StateChoices(name)
+
 
 class TorrentSnapshot(Base):
     __tablename__ = "torrent_snapshots"
