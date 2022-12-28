@@ -92,8 +92,14 @@ async def check_continuously(default_interval=60):
         logger.debug(
             f"Making snapshots for ready torrents as of {dt.datetime.utcnow().strftime('%H:%M:%S')}"
         )
-        check_seeding_torrents(deluge_client, get_session()())
-        logger.debug(
-            f"Waiting until {(dt.datetime.utcnow() + dt.timedelta(seconds=60)).strftime('%H:%M:%S')} to make snapshots for ready torrents"
-        )
-        await asyncio.sleep(default_interval)
+        try:
+            session = get_session()()
+        except:
+            logger.exception("COULD NOT CONNECT TO DB")
+            raise
+        else:
+            check_seeding_torrents(deluge_client, session)
+            logger.debug(
+                f"Waiting until {(dt.datetime.utcnow() + dt.timedelta(seconds=60)).strftime('%H:%M:%S')} to make snapshots for ready torrents"
+            )
+            await asyncio.sleep(default_interval)
