@@ -16,7 +16,7 @@ video_qualities = ["480p", "720p", "1080p", "2160p"]
 def get_engine(echo=True):
     return create_engine(
         f"postgresql+{os.environ.get('PG_DRIVER')}://{os.environ.get('PG_USER')}"
-        f":{os.environ.get('PG_PASSWORD')}@{os.environ.get('PG_HOST')}:{os.environ.get('PG_PORT')}/test-{os.environ.get('PG_NAME')}",
+        f":{os.environ.get('PG_PASSWORD')}@{os.environ.get('PG_HOST')}:{os.environ.get('PG_PORT', 5432)}/test-{os.environ.get('PG_NAME')}",
         echo=echo,
         future=True,
     )
