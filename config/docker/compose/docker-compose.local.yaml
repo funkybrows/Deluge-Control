@@ -12,9 +12,10 @@ services:
       - DELUGE_TESTS_ROOT_DIR=${DELUGE_TESTS_ROOT_DIR}
       - PG_DRIVER=psycopg2
       - PG_PASSWORD=${PG_PASSWORD}
-      - PG_HOST=${PROJECT_NAME}-postgres
+      - PG_HOST=deluge-control-postgres
       - PG_NAME=${PG_NAME}
       - PG_USER=${PG_USER}
+      - PROJECT_NAME=${PROJECT_NAME}
       - RABBITMQ_USER=${RABBITMQ_USER}
       - RABBITMQ_PASS=${RABBITMQ_PASS}
       - RABBITMQ_HOST=${RABBITMQ_HOST}

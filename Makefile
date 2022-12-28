@@ -25,7 +25,7 @@ DOCKER_NO_WATCH = -d
 endif
 DOCKER_REGISTRY ?=
 NAMESPACE ?=
-PROJECT_NAME ?= deluge-control
+PROJECT_NAME ?= deluge_control
 RABBIT_EXCHANGE ?=
 
 # Alembic
@@ -85,7 +85,7 @@ launch-local-project:
 	RABBIT_EXCHANGE=$(RABBIT_EXCHANGE) \
 	docker compose \
 		-f config/docker/compose/docker-compose.local.yaml \
-		run -it ${PROJECT_NAME} $(DOCKER_LOCAL_CMD)
+		run -it deluge-control $(DOCKER_LOCAL_CMD)
 
 # Python
 run:
