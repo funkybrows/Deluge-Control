@@ -19,50 +19,48 @@ old_values = ("DL", "SEED", "PEND", "CHECK", "E", "Q", "ALLOC", "MOV")
 new_values = ("PAUSE", *old_values)
 old_type = sa.Enum(*old_values, name="statechoices")
 new_type = sa.Enum(*new_values, name="statechoices")
-temp_type = sa.Enum("TEMPVAL", name="tempstatechoices")
+new_tmp_type = sa.Enum(*new_values, name="tmpstatechoices")
+old_tmp_type = sa.Enum(*old_values, name="tmpstatechoices")
 
 
 def upgrade() -> None:
-    op.execute("CREATE TYPE tempstatechoices AS ENUM ('TEMPVAL') ")
+    op.execute(f"CREATE TYPE tmpstatechoices AS ENUM {new_values}")
     op.alter_column(
         "torrents",
         "state",
-        type_=temp_type,
+        type_=new_tmp_type,
         existing_type=old_type,
-        postgresql_using="state::text::tempstatechoices",
+        postgresql_using="state::text::tmpstatechoices",
     )
-    op.execute("DROP TYPE statechoices")
-    op.execute(
-        "CREATE TYPE statechoices AS ENUM ('DL', 'SEED', 'PEND', 'CHECK', 'E', 'Q', 'ALLOC', 'MOV', 'PAUSE') "
-    )
+    op.execute(f"DROP TYPE IF EXISTS statechoices")
+    op.execute(f"CREATE TYPE statechoices AS ENUM {new_values}")
     op.alter_column(
         "torrents",
         "state",
         type_=new_type,
-        existing_type=temp_type,
+        existing_type=new_tmp_type,
         postgresql_using="state::text::statechoices",
     )
-    op.execute("DROP TYPE tempstatechoices")
+    op.execute(f"DROP TYPE tmpstatechoices")
 
 
 def downgrade() -> None:
-    op.execute("CREATE TYPE tempstatechoices AS ENUM ('TEMPVAL') ")
+    op.execute("DELETE FROM torrents WHERE state='PAUSE'")
+    op.execute(f"CREATE TYPE tmpstatechoices AS ENUM {old_values}")
     op.alter_column(
         "torrents",
         "state",
-        type_=temp_type,
+        type_=old_tmp_type,
         existing_type=new_type,
-        postgresql_using="state::text::tempstatechoices",
+        postgresql_using="state::text::tmpstatechoices",
     )
-    op.execute("DROP TYPE statechoices")
-    op.execute(
-        "CREATE TYPE statechoices AS ENUM ('DL', 'SEED', 'PEND', 'CHECK', 'E', 'Q', 'ALLOC', 'MOV') "
-    )
+    op.execute(f"DROP TYPE IF EXISTS statechoices")
+    op.execute(f"CREATE TYPE statechoices AS ENUM {old_values}")
     op.alter_column(
         "torrents",
         "state",
         type_=old_type,
-        existing_type=temp_type,
+        existing_type=old_tmp_type,
         postgresql_using="state::text::statechoices",
     )
-    op.execute("DROP TYPE tempstatechoices")
+    op.execute(f"DROP TYPE tmpstatechoices")
