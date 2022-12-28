@@ -13,6 +13,7 @@ logger = logging.getLogger("deluge.models")
 
 class StateChoices(enum.Enum):
     DL = "Downloading"
+    DEL = "Deleted"
     SEED = "Seeding"
     PEND = "Pending"
     CHECK = "Checking"
