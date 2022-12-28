@@ -1,4 +1,3 @@
-import asyncio
 import os
 
 from deluge_control.rabbit import AioDownloader
@@ -14,6 +13,7 @@ def get_aio_downloader():
             client_name=f'{os.environ.get("PROJECT NAME", "Torrenting")} Downloader',
         )
     return AIO_DOWNLOADER
+
 
 async def download_torrents():
     aio_downloader = get_aio_downloader()
