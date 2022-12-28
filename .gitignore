@@ -133,3 +133,10 @@ settings.cfg
 
 # Data saving torrent test info
 */tests/data/*.txt
+
+# SQL dumps
+config/docker/scripts/postgres/local/*.sql
+config/docker/scripts/postgres/local/*.sh
+!config/docker/scripts/postgres/local/init_test_db.sh
+config/docker/scripts/postgres/production/*.sql
+config/docker/scripts/postgres/production/*.sh
