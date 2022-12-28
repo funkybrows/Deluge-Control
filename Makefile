@@ -1,6 +1,3 @@
-include .env
-export 
-
 ifdef DOCKER_COMMON_ENV_PATH
 include $(DOCKER_COMMON_ENV_PATH)
 endif
