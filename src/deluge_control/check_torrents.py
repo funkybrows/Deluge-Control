@@ -21,6 +21,7 @@ def check_seeding_torrents(deluge_client, session):
             ) != "Seeding":
                 db_torrent.set_state(torrent_state)
                 session.add(db_torrent)
+                del db_torrents[index]
 
     with session.begin():
         seeding_torrents = (
