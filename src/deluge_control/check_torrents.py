@@ -10,6 +10,18 @@ logger = logging.getLogger("deluge.check")
 
 
 def check_seeding_torrents(deluge_client, session):
+    def update_seeding_torrents(db_torrents, client_torrents):
+        for index, db_torrent in enumerate(db_torrents):
+            if db_torrent.torrent_id not in client_torrents:
+                db_torrent.set_state("Deleted")
+                session.add(db_torrent)
+                del db_torrents[index]
+            elif (
+                torrent_state := client_torrents[db_torrent.torrent_id]["state"]
+            ) != "Seeding":
+                db_torrent.set_state(torrent_state)
+                session.add(db_torrent)
+
     with session.begin():
         seeding_torrents = (
             session.execute(
@@ -23,10 +35,11 @@ def check_seeding_torrents(deluge_client, session):
         )
         torrent_info = deluge_client.decode_torrent_data(
             deluge_client.get_torrents_status(
-                ["total_uploaded", "total_seeds", "total_peers"],
+                ["total_uploaded", "total_seeds", "total_peers", "state"],
                 id=[torrent.torrent_id for torrent in seeding_torrents],
             )
         )
+        update_seeding_torrents(seeding_torrents, torrent_info)
         new_torrent_snapshots = []
         now = dt.datetime.utcnow()
         next_check = now + dt.timedelta(seconds=60)
@@ -57,7 +70,7 @@ def check_seeding_torrents(deluge_client, session):
             except Exception as exc:
                 logger.exception(
                     "Could not add new torrent snapshot to session: torrent_id, %s",
-                    torrent.torrent_id,
+                    torrent_id,
                 )
             else:
                 new_torrent_snapshots.append(new_torrent_snapshot)
