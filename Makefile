@@ -24,6 +24,7 @@ DOCKER_REGISTRY ?=
 NAMESPACE ?=
 PROJECT_NAME ?= deluge_control
 RABBIT_EXCHANGE ?=
+REMOTE_SFTP_HOST ?=
 
 # Alembic
 migrations: import-env-vars
@@ -91,3 +92,9 @@ run:
 
 test:
 	pytest $(CASES) 
+
+# SSH
+create-known-hosts:
+	rm -f $(CONFIG_FOLDER_PATH)/.ssh/known_hosts
+	mkdir -p $(CONFIG_FOLDER_PATH)/.ssh
+	ssh-keyscan -H $(REMOTE_SFTP_HOST) >> $(CONFIG_FOLDER_PATH)/.ssh/known_hosts
