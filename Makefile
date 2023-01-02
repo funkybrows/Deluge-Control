@@ -98,3 +98,10 @@ create-known-hosts:
 	rm -f $(CONFIG_FOLDER_PATH)/.ssh/known_hosts
 	mkdir -p $(CONFIG_FOLDER_PATH)/.ssh
 	ssh-keyscan -H $(REMOTE_SFTP_HOST) >> $(CONFIG_FOLDER_PATH)/.ssh/known_hosts
+
+copy-rsa-key:
+	mkdir -p $(CONFIG_FOLDER_PATH)/.ssh
+	if ! [ -r $(CONFIG_FOLDER_PATH)/.ssh/id_rsa ]; then \
+		ssh-keygen -f $(CONFIG_FOLDER_PATH)/.ssh/id_rsa; \
+	fi
+	ssh-copy-id -i $(CONFIG_FOLDER_PATH)/.ssh/id_rsa $(REMOTE_SFTP_USER)@$(REMOTE_SFTP_HOST)
