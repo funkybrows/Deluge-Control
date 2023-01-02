@@ -35,5 +35,6 @@ def test_ls():
         with get_sftp_connection():
             try:
                 assert test_file in (sftp.listdir(test_dir))
-            finally:
                 sftp.remove(f"{test_dir}/{test_file}")
+            finally:
+                sftp.rmdir(test_dir)
