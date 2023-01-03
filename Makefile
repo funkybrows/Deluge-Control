@@ -5,6 +5,7 @@ endif
 ifdef DOCKER_SPECIFIC_ENV_PATH
 include $(DOCKER_SPECIFIC_ENV_PATH)
 endif
+export
 
 CASES ?= .
 MIG_MESSAGE ?=
