@@ -1,9 +1,11 @@
 import asyncio
 import datetime as dt
 import logging
+from typing import Dict, List, Union
 from sqlalchemy.sql.expression import select
+from sqlalchemy.orm.session import Session
 from .client import DelugeClient
-from .models import StateChoices, Torrent, TorrentSnapshot
+from .models import StateChoices, Torrent, TorrentRetry, TorrentSnapshot
 from .session import get_session
 
 logger = logging.getLogger("deluge.check")
@@ -25,7 +27,21 @@ def split_ready_db_torrents_by_state(session: Session) -> Dict[str, Dict[str, To
 
             )
         )
-        update_seeding_torrents(seeding_torrents, torrent_info)
+def check_downloading_torrents(
+    deluge_client,
+    session: Session,
+    db_downloading_torrents: Dict[str, Torrent],
+    client_torrents: Dict[StateChoices, Dict[str, Union[str, int, float]]],
+) -> List[Torrent]:
+    reannounces = []
+    logger.info("CHECKING DOWNLOADING TORRENTS")
+
+    for download_torrent_id, download_torrent in db_downloading_torrents.items():
+        if (client_torrent_info := client_torrents[download_torrent_id])[
+            "progress"
+        ] == 0 and client_torrent_info["total_seeds"] > 0:
+            retry, created = TorrentRetry.get_or_create(session, download_torrent_id)
+            if created:
         new_torrent_snapshots = []
         now = dt.datetime.utcnow()
         next_check = now + dt.timedelta(seconds=60)

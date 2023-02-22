@@ -1,6 +1,7 @@
 import datetime as dt
 import random
 from sqlalchemy.sql.expression import select
+    check_downloading_torrents,
     split_ready_db_torrents_by_state,
 from deluge_control.register_torrents import register_new_torrents
 from utils import get_torrents_with, patch_torrents_status, encode_torrent_data
@@ -82,6 +83,7 @@ def test_split_torrents_by_state(deluge_client, movie_names, db_5_sessions):
             assert isinstance(
                 torrents_by_state[torrent.state][torrent.torrent_id], Torrent
             )
+
 
 def test_generate_retry(deluge_client, movie_names, db_5_sessions):
     """
