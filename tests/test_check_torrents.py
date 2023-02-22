@@ -415,9 +415,18 @@ def test_change_seeding_to_paused(deluge_client, movie_names, db_5_sessions):
             deluge_client.decode_torrent_data(mock_torrents.return_value).keys(),
             ("Paused",),
         )
-        check_seeding_torrents(deluge_client, db_5_sessions[2])
-        torrent = db_5_sessions[3].execute(select(Torrent)).scalars().first()
-        assert torrent.state == StateChoices.PAUSE and torrent.name == torrent_name
+
+            client_torrents = deluge_client.decode_torrent_data(
+                deluge_client.get_torrents_status(
+                    ["total_uploaded", "total_seeds", "total_peers", "state"]
+                )
+            )
+            update_torrent_states(db_session, db_torrents, client_torrents)
+            db_session.commit()
+
+        with next(iter_sessions) as db_session:
+            torrent = db_session.execute(select(Torrent)).scalars().first()
+            assert torrent.state == StateChoices.PAUSE and torrent.name == torrent_name
 
 
 def test_change_seeding_to_deleted(deluge_client, movie_names, db_5_sessions):
