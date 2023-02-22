@@ -4,8 +4,13 @@ from typing import List
 from unittest import mock
 from sqlalchemy.sql.expression import select
 from deluge_control.models import StateChoices, Torrent, TorrentRetry
+from deluge_control.check_torrents import (
+    check_torrents,
     check_downloading_torrents,
+    check_seeding_torrents,
     split_ready_db_torrents_by_state,
+    update_torrent_states,
+)
 from deluge_control.register_torrents import register_new_torrents
 from utils import (
     get_torrents_with,
@@ -405,16 +410,21 @@ def test_check_seeding_torrent(deluge_client, movie_names, db_5_sessions):
 
 def test_change_seeding_to_paused(deluge_client, movie_names, db_5_sessions):
     with patch_torrents_status() as mock_torrents:
+        iter_sessions = iter(db_5_sessions)
         mock_torrents.return_value = get_torrents_with(1, movie_names[:1], ("Seeding",))
-        register_new_torrents(deluge_client, db_5_sessions[0])
-        torrent_name, torrent_state = (
-            db_5_sessions[1].execute(select(Torrent.name, Torrent.state)).all()[0]
-        )
-        assert torrent_name and torrent_state == StateChoices.SEED
-        mock_torrents.return_value = get_check_torrents_info(
-            deluge_client.decode_torrent_data(mock_torrents.return_value).keys(),
-            ("Paused",),
-        )
+        register_new_torrents(deluge_client, next(iter_sessions))
+        with next(iter_sessions) as db_session:
+            torrent_name, torrent_state = db_session.execute(
+                select(Torrent.name, Torrent.state)
+            ).all()[0]
+            assert torrent_name and torrent_state == StateChoices.SEED
+            db_torrents = split_ready_db_torrents_by_state(db_session)
+            mock_torrents.return_value = encode_torrent_data(
+                {
+                    db_torrent_id: {"state": "Paused"}
+                    for db_torrent_id in db_torrents[StateChoices.SEED]
+                }
+            )
 
             client_torrents = deluge_client.decode_torrent_data(
                 deluge_client.get_torrents_status(
