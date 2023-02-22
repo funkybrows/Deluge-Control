@@ -1,8 +1,7 @@
 import datetime as dt
 import random
 from sqlalchemy.sql.expression import select
-from deluge_control.models import StateChoices, Torrent, TorrentSnapshot
-from deluge_control.check_torrents import check_seeding_torrents
+    split_ready_db_torrents_by_state,
 from deluge_control.register_torrents import register_new_torrents
 from utils import get_torrents_with, patch_torrents_status, encode_torrent_data
 

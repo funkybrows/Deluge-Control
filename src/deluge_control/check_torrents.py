@@ -9,35 +9,20 @@ from .session import get_session
 logger = logging.getLogger("deluge.check")
 
 
-def check_seeding_torrents(deluge_client, session):
-    def update_seeding_torrents(db_torrents, client_torrents):
-        for index, db_torrent in enumerate(db_torrents):
-            if db_torrent.torrent_id not in client_torrents:
-                db_torrent.set_state("Deleted")
-                session.add(db_torrent)
-                del db_torrents[index]
-            elif (
-                torrent_state := client_torrents[db_torrent.torrent_id]["state"]
-            ) != "Seeding":
-                db_torrent.set_state(torrent_state)
-                session.add(db_torrent)
-                del db_torrents[index]
-
-    with session.begin():
-        seeding_torrents = (
-            session.execute(
-                select(Torrent).where(
-                    Torrent.state == StateChoices.SEED,
-                    Torrent.next_check_time <= dt.datetime.utcnow(),
-                )
-            )
-            .scalars()
-            .all()
+def split_ready_db_torrents_by_state(session: Session) -> Dict[str, Dict[str, Torrent]]:
+    ready_torrents = (
+        session.execute(
+            select(Torrent).where(Torrent.next_check_time <= dt.datetime.utcnow())
         )
-        torrent_info = deluge_client.decode_torrent_data(
-            deluge_client.get_torrents_status(
-                ["total_uploaded", "total_seeds", "total_peers", "state"],
-                id=[torrent.torrent_id for torrent in seeding_torrents],
+        .scalars()
+        .all()
+    )
+    torrents = defaultdict(dict)
+    for torrent in ready_torrents:
+        torrents[torrent.state][torrent.torrent_id] = torrent
+    return torrents
+
+
             )
         )
         update_seeding_torrents(seeding_torrents, torrent_info)
