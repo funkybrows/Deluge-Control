@@ -1,10 +1,18 @@
 import datetime as dt
 import random
+from typing import List
+from unittest import mock
 from sqlalchemy.sql.expression import select
+from deluge_control.models import StateChoices, Torrent, TorrentRetry
     check_downloading_torrents,
     split_ready_db_torrents_by_state,
 from deluge_control.register_torrents import register_new_torrents
-from utils import get_torrents_with, patch_torrents_status, encode_torrent_data
+from utils import (
+    get_torrents_with,
+    patch_call,
+    patch_torrents_status,
+    encode_torrent_data,
+)
 
 
 def get_downloading_torrents_info(
@@ -206,6 +214,54 @@ def test_preexisting_retry_given_higher_count_and_wait(
                     <= now + dt.timedelta(minutes=11)
                 )
 
+
+def test_reannounces(deluge_client, db_5_sessions, movie_names):
+    """
+    We should force reannounce for every torrent ready for check and with a retry count
+    """
+    iter_sessions = iter(db_5_sessions)
+    with patch_torrents_status() as mock_torrents:
+        torrents = []
+        iter_move_names = iter(movie_names)
+        with next(iter_sessions) as db_session:
+            for i in range(10):
+                torrents.append(
+                    torrent := Torrent(
+                        torrent_id=f"torrent_{i}",
+                        name=next(iter_move_names),
+                        state=StateChoices.DL,
+                        time_added=dt.datetime.utcnow(),
+                    )
+                )
+                torrent.retries.append(TorrentRetry(torrent_id=torrent.id, count=3))
+        for torrent in torrents:
+            db_session.add(torrent)
+        db_session.commit()
+        mock_torrents.return_value = get_downloading_torrents_info(
+            (torrent.torrent_id for torrent in torrents),
+            total_seeds=range(1, 50),
+            progress=[0],
+        )
+        db_downloading_torrents = split_ready_db_torrents_by_state(db_session)[
+            StateChoices.DL
+        ]
+        client_torrents = deluge_client.decode_torrent_data(
+            deluge_client.get_torrents_status(
+                status_keys=["state", "progress", "total_seeds"]
+            )
+        )
+        with mock.patch(
+            "deluge_control.client.DelugeClient.force_reannounce"
+        ) as mock_reannounce:
+            check_downloading_torrents(
+                deluge_client,
+                db_session,
+                db_downloading_torrents,
+                client_torrents,
+            )
+        mock_reannounce.assert_called_once_with(
+            [torrent.torrent_id for torrent in torrents]
+        )
 
         mock_torrents.return_value = get_torrents_with(1, movie_names[1], ("Seeding",))
         register_new_torrents(deluge_client, db_5_sessions[0])
