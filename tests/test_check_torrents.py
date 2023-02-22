@@ -64,6 +64,55 @@ def test_split_torrents_by_state(deluge_client, movie_names, db_5_sessions):
                 torrents_by_state[torrent.state][torrent.torrent_id], Torrent
             )
 
+def test_generate_retry(deluge_client, movie_names, db_5_sessions):
+    """
+    Confirm Retry obj created for a downloading obj at 0 progress
+    """
+    iter_sessions = iter(db_5_sessions)
+    with patch_torrents_status() as mock_torrents:
+        mock_torrents.return_value = get_torrents_with(
+            1, movie_names[1], ("Downloading",)
+        )
+        register_new_torrents(deluge_client, next(iter_sessions))
+        with next(iter_sessions) as db_session:
+            db_downloading_torrents = split_ready_db_torrents_by_state(db_session)[
+                StateChoices.DL
+            ]
+            torrent = list(db_downloading_torrents.values())[0]
+
+        mock_torrents.return_value = get_downloading_torrents_info(
+            (torrent.torrent_id,), total_seeds=range(1, 50), progress=[0]
+        )
+        client_torrents = deluge_client.decode_torrent_data(
+            deluge_client.get_torrents_status(
+                status_keys=["state", "progress", "total_seeds"]
+            )
+        )
+        with next(iter_sessions) as db_session:
+            check_downloading_torrents(
+                deluge_client,
+                db_session,
+                db_downloading_torrents,
+                client_torrents,
+            )
+            db_session.commit()
+
+        with next(iter_sessions) as db_session:
+            db_session.add(torrent)
+            retry = (
+                db_session.execute(
+                    select(TorrentRetry).where(TorrentRetry.torrent_id == torrent.id)
+                )
+                .scalars()
+                .first()
+            )
+            assert (
+                (now := dt.datetime.utcnow())
+                < retry.torrent.next_check_time
+                <= now + dt.timedelta(minutes=1)
+            )
+
+
     with patch_torrents_status() as mock_torrents:
         mock_torrents.return_value = get_torrents_with(1, movie_names[1], ("Seeding",))
         register_new_torrents(deluge_client, db_5_sessions[0])
