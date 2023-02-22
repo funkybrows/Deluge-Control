@@ -21,7 +21,22 @@ def get_check_torrents_info(torrent_ids, state_options):
     )
 
 
-def test_check_torrent(deluge_client, movie_names, db_5_sessions):
+def test_split_torrents_by_state(deluge_client, movie_names, db_5_sessions):
+    iter_sessions = iter(db_5_sessions)
+    with patch_torrents_status() as mock_torrents:
+        mock_torrents.return_value = {
+            **get_torrents_with(2, movie_names[0:2], ("Downloading",)),
+            **get_torrents_with(2, movie_names[2:], ("Seeding",)),
+        }
+        register_new_torrents(deluge_client, next(iter_sessions))
+        torrents = next(iter_sessions).execute(select(Torrent)).scalars().all()
+        torrents_by_state = split_ready_db_torrents_by_state(next(iter_sessions))
+
+        for torrent in torrents:
+            assert isinstance(
+                torrents_by_state[torrent.state][torrent.torrent_id], Torrent
+            )
+
     with patch_torrents_status() as mock_torrents:
         mock_torrents.return_value = get_torrents_with(1, movie_names[1], ("Seeding",))
         register_new_torrents(deluge_client, db_5_sessions[0])
