@@ -20,6 +20,34 @@ def get_check_torrents_info(torrent_ids, state_options):
     )
 
 
+def test_split_torrents_only_covers_ready_torrents(movie_names, db_5_sessions):
+    iter_sessions = iter(db_5_sessions)
+    with next(iter_sessions) as db_session:
+        normal_torrent = Torrent(
+            torrent_id=(normal_torrent_id := "abcd1234"),
+            name=movie_names[0],
+            time_added=(now := dt.datetime.utcnow()),
+            state=StateChoices.SEED,
+        )
+        db_session.add(normal_torrent)
+        delayed_torrent = Torrent(
+            torrent_id=(delayed_torrent_id := "abcd4321"),
+            name=movie_names[2],
+            time_added=now,
+            next_check_time=now + dt.timedelta(days=1),
+            state=StateChoices.SEED,
+        )
+        db_session.add(delayed_torrent)
+        db_session.commit()
+
+    with next(iter_sessions) as db_session:
+        ready_db_torrents = split_ready_db_torrents_by_state(db_session)[
+            StateChoices.SEED
+        ]
+        assert delayed_torrent_id not in ready_db_torrents
+        assert normal_torrent_id in ready_db_torrents
+
+
 def test_split_torrents_by_state(deluge_client, movie_names, db_5_sessions):
     iter_sessions = iter(db_5_sessions)
     with patch_torrents_status() as mock_torrents:
