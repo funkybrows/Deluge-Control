@@ -44,12 +44,21 @@ def check_downloading_torrents(
             if created:
                 download_torrent.next_check_time += dt.timedelta(seconds=30)
             else:
+                reannounces.append(download_torrent.torrent_id)
                 retry.count += 1
                 if retry.count > 1:
                     download_torrent.next_check_time += dt.timedelta(minutes=10)
                 else:
                     download_torrent.next_check_time += dt.timedelta(minutes=2)
                 session.add(download_torrent)
+
+    if reannounces:
+        logger.info("FORCING REANNOUNCE FOR %s", reannounces)
+        try:
+            deluge_client.force_reannounce(reannounces)
+        except:
+            logger.exception("ERROR: COULD NOT FORCE REANNOUNCE FOR %s", reannounces)
+    return db_downloading_torrents.values()
 
         new_torrent_snapshots = []
         now = dt.datetime.utcnow()
