@@ -215,6 +215,40 @@ def test_preexisting_retry_given_higher_count_and_wait(
                 )
 
 
+def test_no_reannounce_on_retry_creation(deluge_client, movie_names, db_5_sessions):
+    iter_sessions = iter(db_5_sessions)
+    with patch_torrents_status() as mock_torrents:
+        with next(iter_sessions) as db_session:
+            db_session.add(
+                torrent := Torrent(
+                    torrent_id="abc1234",
+                    name=movie_names[1],
+                    state=StateChoices.DL,
+                    time_added=dt.datetime.utcnow(),
+                )
+            )
+            db_session.commit()
+            mock_torrents.return_value = get_downloading_torrents_info(
+                (torrent.torrent_id,), total_seeds=range(1, 50), progress=[0]
+            )
+            db_downloading_torrents = split_ready_db_torrents_by_state(db_session)[
+                StateChoices.DL
+            ]
+            client_torrents = deluge_client.decode_torrent_data(
+                deluge_client.get_torrents_status(
+                    status_keys=["state", "progress", "total_seeds"]
+                )
+            )
+            with patch_call() as mock_call:
+                check_downloading_torrents(
+                    deluge_client,
+                    db_session,
+                    db_downloading_torrents,
+                    client_torrents,
+                )
+                mock_call.assert_not_called()
+
+
 def test_reannounces(deluge_client, db_5_sessions, movie_names):
     """
     We should force reannounce for every torrent ready for check and with a retry count
