@@ -1,6 +1,7 @@
 import asyncio
 import datetime as dt
 import logging
+from collections import defaultdict
 from typing import Dict, List, Union
 from sqlalchemy.sql.expression import select
 from sqlalchemy.orm.session import Session
@@ -101,14 +102,15 @@ def check_seeding_torrents(
     db_seeding_torrents: Dict[str, Torrent],
     client_torrents: Dict[StateChoices, Dict[str, Union[str, int, float]]],
 ):
-        new_torrent_snapshots = []
-        now = dt.datetime.utcnow()
-        next_check = now + dt.timedelta(seconds=60)
-        for torrent in seeding_torrents:
-            torrent_id = torrent.torrent_id
-            logger.info(
-                "ADDING SNAPSHOT %s FOR TORRENT: %s, TOTAL_UPLOAD: %s, SEEDS: %s, PEERS: %s",
-                torrent.name,
+    new_torrent_snapshots = []
+    now = dt.datetime.utcnow()
+    next_check = now + dt.timedelta(seconds=60)
+    logger.info("CHECKING SEEDING TORRENTS")
+    for torrent_id, torrent in db_seeding_torrents.items():
+        torrent_info = client_torrents[torrent_id]
+        logger.info(
+            "ADDING SNAPSHOT %s FOR TORRENT: %s, TOTAL_UPLOAD: %s, SEEDS: %s, PEERS: %s",
+            torrent.name,
             total_uploaded := torrent_info["total_uploaded"],
             total_seeds := torrent_info["total_seeds"],
             total_peers := torrent_info["total_peers"],
@@ -140,6 +142,22 @@ def check_seeding_torrents(
         return new_torrent_snapshots
 
 
+# XXX: We'll eventually make the db operations async
+def check_torrents(deluge_client: DelugeClient, session: Session):
+    db_torrents = split_ready_db_torrents_by_state(session)
+    client_torrents = deluge_client.decode_torrent_data(
+        deluge_client.get_torrents_status(
+            ["progress", "state", "total_peers", "total_seeds", "total_uploaded"],
+            id=[torrent.torrent_id for torrent in db_torrents],
+        )
+    )
+    update_torrent_states(session, db_torrents, client_torrents)
+    check_downloading_torrents(
+        deluge_client, session, db_torrents[StateChoices.DL], client_torrents
+    )
+    check_seeding_torrents(
+        deluge_client, session, db_torrents[StateChoices.SEED], client_torrents
+    )
 
 
 async def check_continuously(default_interval=60):
@@ -150,13 +168,20 @@ async def check_continuously(default_interval=60):
             f"Making snapshots for ready torrents as of {dt.datetime.utcnow().strftime('%H:%M:%S')}"
         )
         try:
-            session = get_session()()
+            session = get_session()
+            with session.begin() as db_session:
+                try:
+                    check_torrents(deluge_client, session)
+                except:
+                    logger.exception("ERROR: FAILED TO CHECK TORRENTS")
+                    db_session.rollback()
+                else:
+                    db_session.commit()
         except:
             logger.exception("COULD NOT CONNECT TO DB")
             raise
         else:
-            check_seeding_torrents(deluge_client, session)
             logger.debug(
-                f"Waiting until {(dt.datetime.utcnow() + dt.timedelta(seconds=60)).strftime('%H:%M:%S')} to make snapshots for ready torrents"
+                f"Waiting until {(dt.datetime.utcnow() + dt.timedelta(seconds=60)).strftime('%H:%M:%S')} to check torrents again"
             )
             await asyncio.sleep(default_interval)
