@@ -25,8 +25,43 @@ def split_ready_db_torrents_by_state(session: Session) -> Dict[str, Dict[str, To
     return torrents
 
 
-            )
-        )
+def update_torrent_states(
+    session: Session,
+    db_torrents: Dict[StateChoices, Dict[str, Torrent]],
+    client_torrents: Dict[StateChoices, Dict[str, Union[str, int, float]]],
+):
+    logger.debug("UPDATING TORRENT STATES")
+    state_changed_torrents = defaultdict(list)
+    to_delete_torrent_ids = defaultdict(list)
+    for db_state, state_torrents in db_torrents.items():
+        for db_torrent_id, db_torrent in state_torrents.items():
+            if db_torrent_id not in client_torrents:
+                logger.debug("CHANGING STATE OF %s TO DELETED", db_torrent.name)
+                db_torrent.set_state("Deleted")
+                session.add(db_torrent)
+                to_delete_torrent_ids[db_state].append(db_torrent_id)
+            elif (
+                client_state := client_torrents[db_torrent.torrent_id]["state"]
+            ) != db_state.value:
+                logger.debug(
+                    "CHANGING STATE OF %s TO %s", db_torrent.name, client_state
+                )
+                db_torrent.set_state(client_state)
+                session.add(db_torrent)
+                state_changed_torrents[db_state].append(
+                    (db_torrent_id, db_state, client_state)
+                )
+
+    for state in tuple(db_torrents.keys()):
+        for (torrent_id, old_state, new_state) in state_changed_torrents[state]:
+            db_torrents[new_state][torrent_id] = db_torrents[old_state][torrent_id]
+            del db_torrents[old_state][torrent_id]
+
+    for state, state_deletes in to_delete_torrent_ids.items():
+        for to_delete in state_deletes:
+            del db_torrents[state][to_delete]
+
+
 def check_downloading_torrents(
     deluge_client,
     session: Session,
