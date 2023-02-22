@@ -42,6 +42,15 @@ def check_downloading_torrents(
         ] == 0 and client_torrent_info["total_seeds"] > 0:
             retry, created = TorrentRetry.get_or_create(session, download_torrent_id)
             if created:
+                download_torrent.next_check_time += dt.timedelta(seconds=30)
+            else:
+                retry.count += 1
+                if retry.count > 1:
+                    download_torrent.next_check_time += dt.timedelta(minutes=10)
+                else:
+                    download_torrent.next_check_time += dt.timedelta(minutes=2)
+                session.add(download_torrent)
+
         new_torrent_snapshots = []
         now = dt.datetime.utcnow()
         next_check = now + dt.timedelta(seconds=60)

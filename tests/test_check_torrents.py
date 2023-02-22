@@ -134,7 +134,79 @@ def test_generate_retry(deluge_client, movie_names, db_5_sessions):
             )
 
 
+def test_preexisting_retry_given_higher_count_and_wait(
+    deluge_client, db_5_sessions, movie_names
+):
+    """
+    A torrent which already has a retry should have its retry count iterated,
+    and receive a larger delay before next check.
+    """
+    iter_sessions = iter(db_5_sessions)
     with patch_torrents_status() as mock_torrents:
+        with next(iter_sessions) as db_session:
+            db_session.add(
+                torrent := Torrent(
+                    torrent_id="abc1234",
+                    name=movie_names[1],
+                    state=StateChoices.DL,
+                    time_added=dt.datetime.utcnow(),
+                )
+            )
+            db_session.commit()
+            mock_torrents.return_value = get_downloading_torrents_info(
+                (torrent.torrent_id,), total_seeds=range(1, 50), progress=[0]
+            )
+            db_downloading_torrents = split_ready_db_torrents_by_state(db_session)[
+                StateChoices.DL
+            ]
+            client_torrents = deluge_client.decode_torrent_data(
+                deluge_client.get_torrents_status(
+                    status_keys=["state", "progress", "total_seeds"]
+                )
+            )
+            check_downloading_torrents(
+                deluge_client,
+                db_session,
+                db_downloading_torrents,
+                client_torrents,
+            )
+            torrent.next_check_time = dt.datetime.utcnow()
+            db_session.commit()
+
+        with mock.patch("deluge_control.client.DelugeClient.force_reannounce"):
+            with next(iter_sessions) as db_session:
+                db_session.add(torrent)
+
+                check_downloading_torrents(
+                    deluge_client,
+                    db_session,
+                    db_downloading_torrents,
+                    client_torrents,
+                )
+                assert torrent.retries[0].count == 1
+                assert (
+                    (now := dt.datetime.utcnow()) + dt.timedelta(seconds=30)
+                    < torrent.next_check_time
+                    <= now + dt.timedelta(minutes=3)
+                )
+                torrent.next_check_time = dt.datetime.utcnow()
+
+            with next(iter_sessions) as db_session:
+                db_session.add(torrent)
+                check_downloading_torrents(
+                    deluge_client,
+                    db_session,
+                    db_downloading_torrents,
+                    client_torrents,
+                )
+                assert torrent.retries[0].count == 2
+                assert (
+                    now + dt.timedelta(minutes=5)
+                    < torrent.next_check_time
+                    <= now + dt.timedelta(minutes=11)
+                )
+
+
         mock_torrents.return_value = get_torrents_with(1, movie_names[1], ("Seeding",))
         register_new_torrents(deluge_client, db_5_sessions[0])
         torrent = db_5_sessions[1].execute(select(Torrent)).scalars().all()[0]
