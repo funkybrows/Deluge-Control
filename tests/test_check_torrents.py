@@ -297,6 +297,79 @@ def test_reannounces(deluge_client, db_5_sessions, movie_names):
             [torrent.torrent_id for torrent in torrents]
         )
 
+
+def test_update_dl_torrent_to_deleted(deluge_client, db_5_sessions, movie_names):
+    iter_sessions = iter(db_5_sessions)
+    with patch_torrents_status() as mock_torrents:
+        with next(iter_sessions) as db_session:
+            db_session.add(
+                torrent := Torrent(
+                    torrent_id=f"abcd1234",
+                    name=movie_names[0],
+                    state=StateChoices.DL,
+                    time_added=dt.datetime.utcnow(),
+                )
+            )
+            db_session.commit()
+            mock_torrents.return_value = {}
+
+        with next(iter_sessions) as db_session:
+            db_session.add(torrent)
+            db_torrents = split_ready_db_torrents_by_state(db_session)
+            client_torrents = deluge_client.decode_torrent_data(
+                deluge_client.get_torrents_status(
+                    status_keys=["state", "progress", "total_seeds"]
+                )
+            )
+            update_torrent_states(db_session, db_torrents, client_torrents)
+            db_session.commit()
+
+        assert (
+            next(iter_sessions)
+            .execute(select(Torrent.state).where(Torrent.torrent_id == "abcd1234"))
+            .scalars()
+            .first()
+            == StateChoices.DEL
+        )
+
+
+def test_update_dl_torrent_to_seed(deluge_client, db_5_sessions, movie_names):
+    iter_sessions = iter(db_5_sessions)
+    with patch_torrents_status() as mock_torrents:
+        with next(iter_sessions) as db_session:
+            db_session.add(
+                torrent := Torrent(
+                    torrent_id=f"abcd1234",
+                    name=movie_names[0],
+                    state=StateChoices.DL,
+                    time_added=dt.datetime.utcnow(),
+                )
+            )
+            db_session.commit()
+
+            mock_torrents.return_value = get_seeding_torrents_info(
+                (torrent.torrent_id,)
+            )
+
+        with next(iter_sessions) as db_session:
+            db_session.add(torrent)
+            db_torrents = split_ready_db_torrents_by_state(db_session)
+            client_torrents = deluge_client.decode_torrent_data(
+                deluge_client.get_torrents_status(
+                    status_keys=["state", "progress", "total_seeds"]
+                )
+            )
+            update_torrent_states(db_session, db_torrents, client_torrents)
+            db_session.commit()
+
+        assert (
+            next(iter_sessions)
+            .execute(select(Torrent.state).where(Torrent.torrent_id == "abcd1234"))
+            .scalars()
+            .first()
+            == StateChoices.SEED
+        )
+
         mock_torrents.return_value = get_torrents_with(1, movie_names[1], ("Seeding",))
         register_new_torrents(deluge_client, db_5_sessions[0])
         torrent = db_5_sessions[1].execute(select(Torrent)).scalars().all()[0]
