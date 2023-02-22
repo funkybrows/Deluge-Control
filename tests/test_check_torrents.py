@@ -370,28 +370,37 @@ def test_update_dl_torrent_to_seed(deluge_client, db_5_sessions, movie_names):
             == StateChoices.SEED
         )
 
+
+def test_check_seeding_torrent(deluge_client, movie_names, db_5_sessions):
+    """
+    Confirm torrent snapshot generated for ready and seeding torrent
+    """
+    with patch_torrents_status() as mock_torrents:
+        iter_sessions = iter(db_5_sessions)
         mock_torrents.return_value = get_torrents_with(1, movie_names[1], ("Seeding",))
-        register_new_torrents(deluge_client, db_5_sessions[0])
-        torrent = db_5_sessions[1].execute(select(Torrent)).scalars().all()[0]
-        assert not db_5_sessions[1].execute(select(TorrentSnapshot)).scalars().all()
-        mock_torrents.return_value = get_check_torrents_info(
-            (torrent.torrent_id,), ("Seeding",)
-        )
-        checked_torrents = check_seeding_torrents(deluge_client, db_5_sessions[2])
-        assert (expected_id := checked_torrents[0].torrent.torrent_id) in (
-            db_returned_ids := [
-                row.torrent_id
-                for row in db_5_sessions[3]
-                .execute(
-                    select(Torrent.torrent_id)
-                    .select_from(TorrentSnapshot)
-                    .join(TorrentSnapshot.torrent)
-                    .where(TorrentSnapshot.torrent == torrent)
-                )
-                .all()
+        register_new_torrents(deluge_client, next(iter_sessions))
+
+        with next(iter_sessions) as db_session:
+            torrent = db_session.execute(select(Torrent)).scalars().all()[0]
+            assert not torrent.snapshots
+
+            mock_torrents.return_value = get_seeding_torrents_info(
+                (torrent.torrent_id,)
+            )
+            db_seeding_torrents = split_ready_db_torrents_by_state(db_session)[
+                StateChoices.SEED
             ]
-        ), f"expected_id: {expected_id}, not in {db_returned_ids}"
-        assert checked_torrents[0].torrent.next_check_time > dt.datetime.utcnow()
+            client_torrents = deluge_client.decode_torrent_data(
+                deluge_client.get_torrents_status(
+                    ["total_uploaded", "total_seeds", "total_peers", "state"]
+                )
+            )
+            check_seeding_torrents(db_session, db_seeding_torrents, client_torrents)
+            db_session.commit()
+
+        with next(iter_sessions) as db_session:
+            db_session.add(torrent)
+            assert torrent.snapshots[0]
 
 
 def test_change_seeding_to_paused(deluge_client, movie_names, db_5_sessions):

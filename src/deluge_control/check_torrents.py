@@ -95,6 +95,12 @@ def check_downloading_torrents(
             logger.exception("ERROR: COULD NOT FORCE REANNOUNCE FOR %s", reannounces)
     return db_downloading_torrents.values()
 
+
+def check_seeding_torrents(
+    session: Session,
+    db_seeding_torrents: Dict[str, Torrent],
+    client_torrents: Dict[StateChoices, Dict[str, Union[str, int, float]]],
+):
         new_torrent_snapshots = []
         now = dt.datetime.utcnow()
         next_check = now + dt.timedelta(seconds=60)
@@ -103,41 +109,37 @@ def check_downloading_torrents(
             logger.info(
                 "ADDING SNAPSHOT %s FOR TORRENT: %s, TOTAL_UPLOAD: %s, SEEDS: %s, PEERS: %s",
                 torrent.name,
-                total_uploaded := torrent_info[torrent_id]["total_uploaded"],
-                total_seeds := torrent_info[torrent_id]["total_seeds"],
-                total_peers := torrent_info[torrent_id]["total_peers"],
-                (time_recorded := now).strftime("%Y:%m:%d @ %H:%M:%S"),
-            )
-            try:
-                session.add(
-                    new_torrent_snapshot := (
-                        TorrentSnapshot(
-                            torrent=torrent,
-                            total_uploaded=total_uploaded
-                            / 1024
-                            / 1024,  # Convert from byte to mega
-                            total_seeds=total_seeds,
-                            total_peers=total_peers,
-                            time_recorded=time_recorded,
-                        )
+            total_uploaded := torrent_info["total_uploaded"],
+            total_seeds := torrent_info["total_seeds"],
+            total_peers := torrent_info["total_peers"],
+            (time_recorded := now).strftime("%Y:%m:%d @ %H:%M:%S"),
+        )
+        try:
+            session.add(
+                new_torrent_snapshot := (
+                    TorrentSnapshot(
+                        torrent=torrent,
+                        total_uploaded=total_uploaded
+                        / 1024
+                        / 1024,  # Convert from byte to mega
+                        total_seeds=total_seeds,
+                        total_peers=total_peers,
+                        time_recorded=time_recorded,
                     )
                 )
-                new_torrent_snapshot.torrent.next_check_time = next_check
-            except Exception as exc:
-                logger.exception(
-                    "Could not add new torrent snapshot to session: torrent_id, %s",
-                    torrent_id,
-                )
-            else:
-                new_torrent_snapshots.append(new_torrent_snapshot)
-
-        try:
-            session.commit()
-            return new_torrent_snapshots
+            )
+            new_torrent_snapshot.torrent.next_check_time = next_check
         except Exception as exc:
-            logger.exception("Could not commit during check_seeding_torrents")
-            session.rollback()
-            return []
+            logger.exception(
+                "Could not add new torrent snapshot to session: torrent_id, %s",
+                torrent_id,
+            )
+        else:
+            new_torrent_snapshots.append(new_torrent_snapshot)
+
+        return new_torrent_snapshots
+
+
 
 
 async def check_continuously(default_interval=60):
