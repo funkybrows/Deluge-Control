@@ -33,6 +33,9 @@ class Torrent(Base):
     time_added = Column(DateTime)
     next_check_time = Column(DateTime, default=dt.datetime.utcnow)
 
+    retries = relationship(
+        "TorrentRetry", back_populates="torrent", passive_deletes=True
+    )
     snapshots = relationship(
         "TorrentSnapshot", back_populates="torrent", passive_deletes=True
     )
@@ -46,6 +49,15 @@ class Torrent(Base):
         )
         self.state = StateChoices(name)
 
+
+class TorrentRetry(Base):
+    __tablename__ = "torrent_retries"
+    id = Column(Integer, primary_key=True)
+    torrent_id = Column(ForeignKey("torrents.id", ondelete="CASCADE"))
+    count = Column(Integer, default=0)
+    last_check = Column(DateTime, default=dt.datetime.utcnow)
+
+    torrent = relationship("Torrent", back_populates="retries", single_parent=True)
 
 class TorrentSnapshot(Base):
     __tablename__ = "torrent_snapshots"
