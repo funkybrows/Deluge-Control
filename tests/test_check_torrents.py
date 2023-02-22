@@ -6,14 +6,33 @@ from deluge_control.register_torrents import register_new_torrents
 from utils import get_torrents_with, patch_torrents_status, encode_torrent_data
 
 
-def get_check_torrents_info(torrent_ids, state_options):
+def get_downloading_torrents_info(
+    torrent_ids, total_seeds: List[int] = None, progress: List[int] = None
+):
+    return encode_torrent_data(
+        {
+            torrent_id: {
+                "state": "Downloading",
+                "total_seeds": random.choice(total_seeds)
+                if total_seeds
+                else random.randint(0, 600),
+                "progress": random.choice(progress)
+                if progress
+                else random.randint(0, 100),
+            }
+            for torrent_id in torrent_ids
+        }
+    )
+
+
+def get_seeding_torrents_info(torrent_ids):
     return encode_torrent_data(
         {
             torrent_id: {
                 "total_uploaded": random.randint(1 * 1024**2, 1 * 1024**3),
                 "total_seeds": random.randint(0, 500),
                 "total_peers": random.randint(0, 500),
-                "state": random.choice(state_options),
+                "state": "Seeding",
             }
             for torrent_id in torrent_ids
         }
