@@ -4,12 +4,12 @@ services:
     image: ${DOCKER_REGISTRY}/${PROJECT_NAME}/${NAMESPACE}:${DOCKER_TAG_VERSION}
     container_name: "${PROJECT_NAME}-${NAMESPACE}"
     environment:
-      - CONFIG_FOLDER_PATH=${CONFIG_FOLDER_PATH}
+      - CONFIG_FOLDER_PATH=${DOCKER_CONFIG_FOLDER_PATH}
       - DEFAULT_DELUGE_HOST=${DEFAULT_DELUGE_HOST}
       - DEFAULT_DELUGE_PORT=${DEFAULT_DELUGE_PORT}
       - DEFAULT_DELUGE_USERNAME=${DEFAULT_DELUGE_USERNAME}
       - DEFAULT_DELUGE_PASSWORD=${DEFAULT_DELUGE_PASSWORD}
-      - DELUGE_TESTS_ROOT_DIR=${DELUGE_TESTS_ROOT_DIR}
+      - DELUGE_REMOTE_TESTS_ROOT_DIR=${DELUGE_REMOTE_TESTS_ROOT_DIR}
       - PG_DRIVER=psycopg2
       - PG_PASSWORD=${PG_PASSWORD}
       - PG_HOST=deluge-control-postgres
@@ -20,11 +20,13 @@ services:
       - RABBITMQ_PASS=${RABBITMQ_PASS}
       - RABBITMQ_HOST=${RABBITMQ_HOST}
       - RABBIT_EXCHANGE=${RABBIT_EXCHANGE}
+      - REMOTE_SFTP_HOST=${REMOTE_SFTP_HOST}
+      - REMOTE_SFTP_USER=${REMOTE_SFTP_USER}
       - TEST_TL_TORRENT_URL=${TEST_TL_TORRENT_URL}
 
     volumes:
       - "${DOCKER_APP_SOURCE_FROM_COMPOSE}:${DOCKER_APP_DEST}"
-      - "${DOCKER_USER_CONFIG_PATH_FROM_COMPOSE}:/root/.${PROJECT_NAME}/config"
+      - "${DOCKER_CTX_FROM_COMPOSE}/${DOCKER_USER_CONFIG_PATH_FROM_CTX}:/root/.${PROJECT_NAME}/config"
       - "../logs/:/root/.${PROJECT_NAME}/logs"
 
     depends_on:
@@ -43,7 +45,7 @@ services:
       - PG_NAME=${PG_NAME}
     volumes:
       - deluge-control-local-postgres-data:/var/lib/postgresql/data
-      - ${DOCKER_POSTGRES_SCRIPTS_PATH_FROM_COMPOSE}:/docker-entrypoint-initdb.d
+      - ${DOCKER_CTX_FROM_COMPOSE}/${DOCKER_POSTGRES_SCRIPTS_PATH_FROM_CTX}/${NAMESPACE}:/docker-entrypoint-initdb.d
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${PG_USER} -d ${PG_NAME}" ]
       interval: 5s

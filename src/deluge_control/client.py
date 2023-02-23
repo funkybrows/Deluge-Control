@@ -3,6 +3,7 @@ import base64
 import logging
 import os
 import os.path
+from typing import Any, Dict, List
 
 from deluge_client import DelugeRPCClient
 
@@ -135,13 +136,19 @@ class DelugeClient:
 
         return self.client.call("core.add_torrent_url", file_url, add_options)
 
-    def get_torrent_status(self, torrent_id, keys):
+    def force_reannounce(self, torrent_ids: List[str]):
+        return self.client.call("core.force_reannounce", torrent_ids)
+
+    def get_method_list(self):
+        return self.client.call("daemon.get_method_list")
+
+    def get_torrent_status(self, torrent_id, keys: List[str]):
         status_keys = (
             self.get_approved_keys_list(keys, self.POSSIBLE_STATUS_KEYS) if keys else []
         )
         return self.client.call("core.get_torrent_status", torrent_id, status_keys)
 
-    def get_torrents_status(self, keys, **filters):
+    def get_torrents_status(self, keys: List[str], **filters: Dict[str, Any]):
         status_keys = (
             self.get_approved_keys_list(keys, self.POSSIBLE_STATUS_KEYS) if keys else []
         )

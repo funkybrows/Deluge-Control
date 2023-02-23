@@ -3,8 +3,9 @@ import enum
 import logging
 
 from sqlalchemy import Column, ForeignKey
+from sqlalchemy.orm import declarative_base, relationship, Session
+from sqlalchemy.sql.expression import select
 from sqlalchemy.types import DateTime, Enum, Integer, String
-from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
 
@@ -33,6 +34,9 @@ class Torrent(Base):
     time_added = Column(DateTime)
     next_check_time = Column(DateTime, default=dt.datetime.utcnow)
 
+    retries = relationship(
+        "TorrentRetry", back_populates="torrent", passive_deletes=True
+    )
     snapshots = relationship(
         "TorrentSnapshot", back_populates="torrent", passive_deletes=True
     )
@@ -45,6 +49,36 @@ class Torrent(Base):
             StateChoices(name),
         )
         self.state = StateChoices(name)
+
+
+class TorrentRetry(Base):
+    __tablename__ = "torrent_retries"
+    id = Column(Integer, primary_key=True)
+    torrent_id = Column(ForeignKey("torrents.id", ondelete="CASCADE"))
+    count = Column(Integer, default=0)
+    last_check = Column(DateTime, default=dt.datetime.utcnow)
+
+    torrent = relationship("Torrent", back_populates="retries", single_parent=True)
+
+    @classmethod
+    def get_or_create(cls, session: Session, torrent_id: str):
+        created = True
+        torrent_pk = (
+            session.execute(select(Torrent.id).where(Torrent.torrent_id == torrent_id))
+            .scalars()
+            .first()
+        )
+        if (
+            torrent_retry := session.execute(
+                select(TorrentRetry).where(TorrentRetry.torrent_id == torrent_pk)
+            )
+            .scalars()
+            .first()
+        ):
+            created = False
+        else:
+            session.add(torrent_retry := TorrentRetry(torrent_id=torrent_pk))
+        return torrent_retry, created
 
 
 class TorrentSnapshot(Base):

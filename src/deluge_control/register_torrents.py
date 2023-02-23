@@ -12,15 +12,16 @@ from .session import get_session
 logger = logging.getLogger("deluge.register")
 
 
+# XXX: We should close the session externally to the fn
 def register_new_torrents(deluge_client, session):
     torrent_info = deluge_client.decode_torrent_data(
         deluge_client.get_torrents_status(["state", "name", "time_added"])
     )
     new_torrents = []
     with session.begin():
-        results = [
-            unparsed_result.torrent_id
-            for unparsed_result in session.execute(
+        old_torrents = [
+            possibly_old_torrent.torrent_id
+            for possibly_old_torrent in session.execute(
                 select(Torrent.torrent_id).where(
                     Torrent.torrent_id.in_(list(torrent_info.keys()))
                 )
@@ -28,7 +29,7 @@ def register_new_torrents(deluge_client, session):
         ]
 
     for torrent_id in torrent_info:
-        if torrent_id not in results:
+        if torrent_id not in old_torrents:
             logger.info(
                 "ADDING TORRENT %s WITH NAME: %s, STATE: %s, TIME_ADDED: %s",
                 torrent_id,

@@ -66,3 +66,7 @@ def get_torrents_with(
 
 def patch_torrents_status():
     return mock.patch("deluge_control.client.DelugeClient.get_torrents_status")
+
+
+def patch_call():
+    return mock.patch("deluge_control.client.DelugeRPCClient.call")
