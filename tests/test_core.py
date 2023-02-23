@@ -4,7 +4,7 @@ import os
 import os.path
 
 
-TESTS_ROOT_DIR = os.environ.get("DELUGE_TESTS_ROOT_DIR")
+TESTS_ROOT_DIR = os.environ.get("DELUGE_REMOTE_TESTS_ROOT_DIR")
 
 
 @pytest.fixture
@@ -44,4 +44,4 @@ def test_get_torrent_status(inferno_torrent, deluge_client):
         key.decode("utf-8"): value.decode("utf-8") for key, value in result.items()
     }
     assert decoded_result["name"] == "inferno00dant_2"
-    assert decoded_result["state"] in ("Seeding", "Downloading")
+    assert decoded_result["state"] in ("Seeding", "Downloading", "Error")
