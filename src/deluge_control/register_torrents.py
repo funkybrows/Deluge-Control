@@ -76,4 +76,4 @@ async def register_continuously(default_interval=30):
         logger.debug(
             f"Waiting until {(dt.datetime.utcnow() + dt.timedelta(seconds=default_interval)).strftime('%H:%M:%S')} to check for new torrents"
         )
-        await asyncio.sleep(60)
+        await asyncio.sleep(default_interval)
