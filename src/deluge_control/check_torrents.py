@@ -104,7 +104,7 @@ def check_seeding_torrents(
 ):
     new_torrent_snapshots = []
     now = dt.datetime.utcnow()
-    next_check = now + dt.timedelta(seconds=60)
+    next_check = now + dt.timedelta(minutes=5)
     logger.info("CHECKING SEEDING TORRENTS")
     for torrent_id, torrent in db_seeding_torrents.items():
         torrent_info = client_torrents[torrent_id]
