@@ -87,7 +87,7 @@ def check_downloading_torrents(
                 )
                 if retry.count > 2:
                     download_torrent.next_check_time += dt.timedelta(minutes=10)
-                elif retry.count > 1:
+                elif retry.count == 1:
                     download_torrent.next_check_time += dt.timedelta(minutes=1)
                 else:
                     download_torrent.next_check_time += dt.timedelta(seconds=15)
