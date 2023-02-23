@@ -145,6 +145,9 @@ def check_seeding_torrents(
 # XXX: We'll eventually make the db operations async
 def check_torrents(deluge_client: DelugeClient, session: Session):
     db_torrents = split_ready_db_torrents_by_state(session)
+    torrent_ids = []
+    for torrents in db_torrents.values():
+        torrent_ids += [torrent.torrent_id for torrent in torrents]
     client_torrents = deluge_client.decode_torrent_data(
         deluge_client.get_torrents_status(
             ["progress", "state", "total_peers", "total_seeds", "total_uploaded"],
