@@ -7,8 +7,6 @@ include $(DOCKER_SPECIFIC_ENV_PATH)
 endif
 export
 
-export
-
 
 DOCKER_APP_DEST ?= /app
 DOCKER_CTX_FROM_COMPOSE ?= ../../../..

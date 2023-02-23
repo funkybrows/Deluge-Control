@@ -171,7 +171,7 @@ async def check_continuously(default_interval=60):
             session = get_session()
             with session.begin() as db_session:
                 try:
-                    check_torrents(deluge_client, session)
+                    check_torrents(deluge_client, db_session)
                 except:
                     logger.exception("ERROR: FAILED TO CHECK TORRENTS")
                     db_session.rollback()
