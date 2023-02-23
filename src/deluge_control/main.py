@@ -20,7 +20,7 @@ async def close_connection_and_exit():
 async def run():
     asyncio.create_task(download_torrents())
     asyncio.create_task(check_continuously(default_interval=15))
-    asyncio.create_task(register_continuously())
+    asyncio.create_task(register_continuously(default_interval=30))
 
 
 if __name__ == "__main__":

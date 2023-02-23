@@ -65,7 +65,7 @@ def register_new_torrents(deluge_client, session):
         return []
 
 
-async def register_continuously(default_interval=60):
+async def register_continuously(default_interval=30):
     deluge_client = DelugeClient()
     await deluge_client.connect_with_retry()
     while True:
@@ -74,6 +74,6 @@ async def register_continuously(default_interval=60):
         )
         register_new_torrents(deluge_client, get_session()())
         logger.debug(
-            f"Waiting until {(dt.datetime.utcnow() + dt.timedelta(seconds=60)).strftime('%H:%M:%S')} to check for new torrents"
+            f"Waiting until {(dt.datetime.utcnow() + dt.timedelta(seconds=default_interval)).strftime('%H:%M:%S')} to check for new torrents"
         )
         await asyncio.sleep(60)
