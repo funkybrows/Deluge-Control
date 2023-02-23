@@ -146,8 +146,8 @@ def check_seeding_torrents(
 def check_torrents(deluge_client: DelugeClient, session: Session):
     db_torrents = split_ready_db_torrents_by_state(session)
     torrent_ids = []
-    for torrents in db_torrents.values():
-        torrent_ids += [torrent.torrent_id for torrent in torrents]
+    for grouped_torrent_ids in db_torrents.values():
+        torrent_ids += list(grouped_torrent_ids)
     client_torrents = deluge_client.decode_torrent_data(
         deluge_client.get_torrents_status(
             ["progress", "state", "total_peers", "total_seeds", "total_uploaded"],
