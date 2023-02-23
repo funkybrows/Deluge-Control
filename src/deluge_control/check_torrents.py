@@ -36,7 +36,10 @@ def update_torrent_states(
     to_delete_torrent_ids = defaultdict(list)
     for db_state, state_torrents in db_torrents.items():
         for db_torrent_id, db_torrent in state_torrents.items():
-            if db_torrent_id not in client_torrents:
+            if (
+                db_torrent_id not in client_torrents
+                and db_torrent.state is not StateChoices.DEL
+            ):
                 logger.debug("CHANGING STATE OF %s TO DELETED", db_torrent.name)
                 db_torrent.set_state("Deleted")
                 session.add(db_torrent)
