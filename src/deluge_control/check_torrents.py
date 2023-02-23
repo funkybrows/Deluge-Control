@@ -158,9 +158,7 @@ def check_torrents(deluge_client: DelugeClient, session: Session):
     check_downloading_torrents(
         deluge_client, session, db_torrents[StateChoices.DL], client_torrents
     )
-    check_seeding_torrents(
-        deluge_client, session, db_torrents[StateChoices.SEED], client_torrents
-    )
+    check_seeding_torrents(session, db_torrents[StateChoices.SEED], client_torrents)
 
 
 async def check_continuously(default_interval=60):
