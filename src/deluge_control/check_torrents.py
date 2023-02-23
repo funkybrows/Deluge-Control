@@ -74,19 +74,23 @@ def check_downloading_torrents(
     logger.info("CHECKING DOWNLOADING TORRENTS")
 
     for download_torrent_id, download_torrent in db_downloading_torrents.items():
-        if (client_torrent_info := client_torrents[download_torrent_id])[
-            "progress"
-        ] == 0 and client_torrent_info["total_seeds"] > 0:
+        if client_torrents[download_torrent_id]["progress"] == 0:
             retry, created = TorrentRetry.get_or_create(session, download_torrent_id)
             if created:
+                logger.debug("%s needs retry. Creating", download_torrent.name)
                 download_torrent.next_check_time += dt.timedelta(seconds=30)
             else:
                 reannounces.append(download_torrent.torrent_id)
                 retry.count += 1
-                if retry.count > 1:
+                logger.debug(
+                    "%s needs retry. Count is %s", download_torrent.name, retry.count
+                )
+                if retry.count > 2:
                     download_torrent.next_check_time += dt.timedelta(minutes=10)
+                if retry.count > 1:
+                    download_torrent.next_check_time += dt.timedelta(minutes=1)
                 else:
-                    download_torrent.next_check_time += dt.timedelta(minutes=2)
+                    download_torrent.next_check_time += dt.timedelta(seconds=15)
                 session.add(download_torrent)
 
     if reannounces:
