@@ -2,6 +2,7 @@ import os
 import faker
 import random
 import pytest
+from unittest import mock
 
 from sqlalchemy import create_engine
 from deluge_control.client import DelugeClient
@@ -71,3 +72,9 @@ def movie_names():
             + ".".join((fake.word().upper() for _ in range(3)))
         )
     return ret
+
+
+@pytest.fixture(scope="session")
+def mock_xseed_request():
+    with mock.patch("deluge_control.xseed.XSeedClient.cross_seed") as mock_request:
+        yield mock_request
