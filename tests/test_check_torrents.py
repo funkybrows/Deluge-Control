@@ -13,6 +13,7 @@ from deluge_control.check_torrents import (
 )
 from deluge_control.register_torrents import register_new_torrents
 from utils import (
+    get_seeding_torrents_info,
     get_torrents_with,
     patch_call,
     patch_torrents_status,
@@ -33,20 +34,6 @@ def get_downloading_torrents_info(
                 "progress": random.choice(progress)
                 if progress
                 else random.randint(0, 100),
-            }
-            for torrent_id in torrent_ids
-        }
-    )
-
-
-def get_seeding_torrents_info(torrent_ids):
-    return encode_torrent_data(
-        {
-            torrent_id: {
-                "total_uploaded": random.randint(1 * 1024**2, 1 * 1024**3),
-                "total_seeds": random.randint(0, 500),
-                "total_peers": random.randint(0, 500),
-                "state": "Seeding",
             }
             for torrent_id in torrent_ids
         }

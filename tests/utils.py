@@ -1,6 +1,23 @@
+import random
 from unittest import mock
 
 from deluge_control.models import StateChoices
+
+TORRENTS_STATUS_DEFAULT_ARGS = ("total_uploaded", "total_seeds", "total_peers", "state")
+
+
+def get_seeding_torrents_info(torrent_ids):
+    return encode_torrent_data(
+        {
+            torrent_id: {
+                "total_uploaded": random.randint(1 * 1024**2, 1 * 1024**3),
+                "total_seeds": random.randint(0, 500),
+                "total_peers": random.randint(0, 500),
+                "state": "Seeding",
+            }
+            for torrent_id in torrent_ids
+        }
+    )
 
 
 def get_torrents_by_id(n_torrents):

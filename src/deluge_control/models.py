@@ -33,6 +33,7 @@ class Torrent(Base):
     state = Column(Enum(StateChoices))
     time_added = Column(DateTime)
     next_check_time = Column(DateTime, default=dt.datetime.utcnow)
+    next_xseed = Column(DateTime, default=dt.datetime.utcnow)
 
     retries = relationship(
         "TorrentRetry", back_populates="torrent", passive_deletes=True
