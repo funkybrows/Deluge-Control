@@ -40,6 +40,9 @@ class Torrent(Base):
     snapshots = relationship(
         "TorrentSnapshot", back_populates="torrent", passive_deletes=True
     )
+    xseeds = relationship(
+        "TorrentXSeed", back_populates="torrent", passive_deletes=True
+    )
 
     def set_state(self, name):
         logger.debug(
@@ -72,6 +75,14 @@ class GetOrCreateMixin:
 
 
 class TorrentRetry(Base, GetOrCreateMixin):
+    __tablename__ = "torrent_retries"
+    id = Column(Integer, primary_key=True)
+    torrent_id = Column(ForeignKey("torrents.id", ondelete="CASCADE"))
+    count = Column(Integer, default=0)
+    last_check = Column(DateTime, default=dt.datetime.utcnow)
+
+    torrent = relationship("Torrent", back_populates="retries", single_parent=True)
+
 
 class TorrentSnapshot(Base):
     __tablename__ = "torrent_snapshots"
@@ -83,3 +94,14 @@ class TorrentSnapshot(Base):
     time_recorded = Column(DateTime)
 
     torrent = relationship("Torrent", back_populates="snapshots", single_parent=True)
+
+
+class TorrentXSeed(Base, GetOrCreateMixin):
+    __tablename__ = "torrent_xseeds"
+    id = Column(Integer, primary_key=True)
+    torrent_id = Column(ForeignKey("torrents.id", ondelete="CASCADE"))
+    last_check = Column(DateTime, default=dt.datetime.utcnow)
+    next_check = Column(DateTime, nullable=True)
+    count = Column(Integer, default=0)
+
+    torrent = relationship("Torrent", back_populates="xseeds", single_parent=True)
