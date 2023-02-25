@@ -33,7 +33,8 @@ class Torrent(Base):
     state = Column(Enum(StateChoices))
     time_added = Column(DateTime)
     next_check_time = Column(DateTime, default=dt.datetime.utcnow)
-    next_xseed = Column(DateTime, default=dt.datetime.utcnow)
+    next_snapshot = Column(DateTime, nullable=True)
+    next_xseed_check = Column(DateTime, default=dt.datetime.utcnow)
 
     retries = relationship(
         "TorrentRetry", back_populates="torrent", passive_deletes=True
@@ -102,7 +103,6 @@ class TorrentXSeed(Base, GetOrCreateMixin):
     id = Column(Integer, primary_key=True)
     torrent_id = Column(ForeignKey("torrents.id", ondelete="CASCADE"))
     last_check = Column(DateTime, default=dt.datetime.utcnow)
-    next_check = Column(DateTime, nullable=True)
     count = Column(Integer, default=0)
 
     torrent = relationship("Torrent", back_populates="xseeds", single_parent=True)

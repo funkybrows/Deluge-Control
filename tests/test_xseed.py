@@ -74,7 +74,7 @@ def test_xseed_checks_updated_on_creation(
     mock_xseed_request,
 ):
     """
-    On creation, xseed.next_check and last_check should both be set
+    On creation, xseed next_check and last_check should both be set
     """
     iter_sessions = iter(db_5_sessions)
     with next(iter_sessions) as db_session:
@@ -106,9 +106,9 @@ def test_xseed_checks_updated_on_creation(
             )
             assert (
                 (past := now + dt.timedelta(seconds=30))
-                < xseed.next_check
+                < xseed.torrent.next_xseed_check
                 <= (later := now + dt.timedelta(minutes=1, seconds=30)),
-                f"next_check: {xseed.next_check} is not either too early ({past}) or not higher than {later}",
+                f"next_check: {xseed.torrent.next_xseed_check} is not either too early ({past}) or not higher than {later}",
             )
 
 
@@ -116,7 +116,7 @@ def test_xseed_called_when_ready(
     deluge_client, db_5_sessions, seeding_torrent, mock_xseed_request
 ):
     """
-    On creation, xseed.next_check and last_check should both be set
+    On creation, xseed next_check and last_check should both be set
     """
     iter_sessions = iter(db_5_sessions)
     with next(iter_sessions) as db_session:
@@ -143,7 +143,7 @@ def test_xseed_not_called_when_not_ready(
     deluge_client, db_5_sessions, seeding_torrent, mock_xseed_request
 ):
     """
-    On creation, xseed.next_check and last_check should both be set
+    On creation, xseed next_check and last_check should both be set
     """
     iter_sessions = iter(db_5_sessions)
     with next(iter_sessions) as db_session:
@@ -153,9 +153,11 @@ def test_xseed_not_called_when_not_ready(
     with patch_torrents_status() as mock_status:
         with next(iter_sessions) as db_session:
             db_session.add(seeding_torrent)
+            seeding_torrent.next_xseed_check = dt.datetime.utcnow() + dt.timedelta(
+                minutes=15
+            )
             xseed = TorrentXSeed(
                 torrent_id=seeding_torrent.id,
-                next_check=dt.datetime.utcnow() + dt.timedelta(minutes=15),
             )
             db_session.add(xseed)
             mock_status.return_value = get_seeding_torrents_info(

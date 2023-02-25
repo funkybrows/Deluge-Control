@@ -8,6 +8,7 @@ from sqlalchemy.orm.session import Session
 from .client import DelugeClient
 from .models import StateChoices, Torrent, TorrentRetry, TorrentSnapshot, TorrentXSeed
 from .session import get_session
+from .xseed import get_xseed_client
 
 logger = logging.getLogger("deluge.check")
 
@@ -145,11 +146,11 @@ def check_seeding_torrents(
             new_torrent_snapshots.append(new_torrent_snapshot)
 
         # XXX: Why not just use Torrent.id?
-        if torrent.next_xseed <= dt.datetime.utcnow():
-            xseed, created = TorrentXSeed.get_or_create(session, torrent.torrent_id)
-            if created:
-                xseed.last_check = now
-                xseed.next_check = now + dt.timedelta(minutes=1)
+        if torrent.next_xseed_check <= now:
+            xseed, _ = TorrentXSeed.get_or_create(session, torrent.torrent_id)
+            xseed_client = get_xseed_client()
+            xseed_client.cross_seed(torrent)
+
         return new_torrent_snapshots
 
 
