@@ -147,10 +147,11 @@ def check_seeding_torrents(
 
         # XXX: Why not just use Torrent.id?
         if torrent.next_xseed_check <= now:
-            xseed, _ = TorrentXSeed.get_or_create(session, torrent.torrent_id)
-            xseed_client = get_xseed_client()
-            xseed_client.cross_seed(torrent)
-
+            xseed, _ = TorrentXSeed.get_or_create(session, torrent.torrent_id, count=0)
+            if (xseed.count or 0) < torrent.MAX_XSEED_TRIES:
+                xseed_client = get_xseed_client()
+                xseed_client.cross_seed(torrent)
+                xseed.count += 1
         return new_torrent_snapshots
 
 

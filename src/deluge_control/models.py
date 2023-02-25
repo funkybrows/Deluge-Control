@@ -1,6 +1,7 @@
 import datetime as dt
 import enum
 import logging
+from typing import Dict, Union
 
 from sqlalchemy import Column, ForeignKey
 from sqlalchemy.orm import declarative_base, relationship, Session
@@ -26,6 +27,8 @@ class StateChoices(enum.Enum):
 
 
 class Torrent(Base):
+    MAX_XSEED_TRIES = 5
+
     __tablename__ = "torrents"
     id = Column(Integer, primary_key=True)
     torrent_id = Column(String(100), nullable=False, unique=True)
@@ -58,7 +61,12 @@ class Torrent(Base):
 
 class GetOrCreateMixin:
     @classmethod
-    def get_or_create(cls, session: Session, torrent_id: str):
+    def get_or_create(
+        cls,
+        session: Session,
+        torrent_id: str,
+        **create_kwargs: Dict[str, Union[str, int]],
+    ):
         created = True
         torrent_pk = (
             session.execute(select(Torrent.id).where(Torrent.torrent_id == torrent_id))
@@ -72,7 +80,7 @@ class GetOrCreateMixin:
         ):
             created = False
         else:
-            session.add(obj := cls(torrent_id=torrent_pk))
+            session.add(obj := cls(torrent_id=torrent_pk, **create_kwargs))
         return obj, created
 
 
