@@ -110,6 +110,7 @@ def check_seeding_torrents(
 ):
     new_torrent_snapshots = []
     now = dt.datetime.utcnow()
+    # XXX: Make this shorter, and next_snapshot higher
     next_check = now + dt.timedelta(minutes=5)
     logger.info("CHECKING SEEDING TORRENTS")
     for torrent_id, torrent in db_seeding_torrents.items():
@@ -122,6 +123,7 @@ def check_seeding_torrents(
             total_peers := torrent_info["total_peers"],
             (time_recorded := now).strftime("%Y:%m:%d @ %H:%M:%S"),
         )
+        # XXX: Conditional on next_snapshot
         try:
             session.add(
                 new_torrent_snapshot := (
