@@ -6,7 +6,7 @@ from typing import Dict, List, Union
 from sqlalchemy.sql.expression import select
 from sqlalchemy.orm.session import Session
 from .client import DelugeClient
-from .models import StateChoices, Torrent, TorrentRetry, TorrentSnapshot
+from .models import StateChoices, Torrent, TorrentRetry, TorrentSnapshot, TorrentXSeed
 from .session import get_session
 
 logger = logging.getLogger("deluge.check")
@@ -144,6 +144,9 @@ def check_seeding_torrents(
         else:
             new_torrent_snapshots.append(new_torrent_snapshot)
 
+        # XXX: Why not just use Torrent.id?
+        if torrent.next_xseed <= dt.datetime.utcnow():
+            xseed, created = TorrentXSeed.get_or_create(session, torrent.torrent_id)
         return new_torrent_snapshots
 
 
