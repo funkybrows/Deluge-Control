@@ -137,3 +137,35 @@ def test_xseed_called_when_ready(
             )
             check_seeding_torrents(db_session, db_seeding_torrents, client_torrents)
             mock_xseed_request.assert_called_with(seeding_torrent)
+
+
+def test_xseed_not_called_when_not_ready(
+    deluge_client, db_5_sessions, seeding_torrent, mock_xseed_request
+):
+    """
+    On creation, xseed.next_check and last_check should both be set
+    """
+    iter_sessions = iter(db_5_sessions)
+    with next(iter_sessions) as db_session:
+        db_session.add(seeding_torrent)
+        db_session.commit()
+
+    with patch_torrents_status() as mock_status:
+        with next(iter_sessions) as db_session:
+            db_session.add(seeding_torrent)
+            xseed = TorrentXSeed(
+                torrent_id=seeding_torrent.id,
+                next_check=dt.datetime.utcnow() + dt.timedelta(minutes=15),
+            )
+            db_session.add(xseed)
+            mock_status.return_value = get_seeding_torrents_info(
+                (seeding_torrent.torrent_id,)
+            )
+            db_seeding_torrents = split_ready_db_torrents_by_state(db_session)[
+                StateChoices.SEED
+            ]
+            client_torrents = deluge_client.decode_torrent_data(
+                deluge_client.get_torrents_status(*TORRENTS_STATUS_DEFAULT_ARGS)
+            )
+            check_seeding_torrents(db_session, db_seeding_torrents, client_torrents)
+            mock_xseed_request.assert_not_called()
