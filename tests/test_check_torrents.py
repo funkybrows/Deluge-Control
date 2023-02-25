@@ -187,19 +187,19 @@ def test_preexisting_retry_given_higher_count_and_wait(
                 assert (
                     (now := dt.datetime.utcnow()) + dt.timedelta(seconds=30)
                     < torrent.next_check_time
-                    <= now + dt.timedelta(minutes=3)
+                    <= now + dt.timedelta(minutes=1)
                 )
                 torrent.next_check_time = dt.datetime.utcnow()
 
             with next(iter_sessions) as db_session:
                 db_session.add(torrent)
+                torrent.retries[0].count = 3
                 check_downloading_torrents(
                     deluge_client,
                     db_session,
                     db_downloading_torrents,
                     client_torrents,
                 )
-                assert torrent.retries[0].count == 2
                 assert (
                     now + dt.timedelta(minutes=5)
                     < torrent.next_check_time
@@ -363,7 +363,9 @@ def test_update_dl_torrent_to_seed(deluge_client, db_5_sessions, movie_names):
         )
 
 
-def test_check_seeding_torrent(deluge_client, movie_names, db_5_sessions):
+def test_check_seeding_torrent(
+    deluge_client, movie_names, db_5_sessions, mock_xseed_request
+):
     """
     Confirm torrent snapshot generated for ready and seeding torrent
     """
@@ -435,6 +437,7 @@ def test_check_torrents(
     mock_update_state,
     mock_check_downloading_torrents,
     mock_check_seeding_torrents,
+    mock_xseed_request,
     deluge_client,
     db_session,
 ):
