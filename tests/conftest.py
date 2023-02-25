@@ -74,7 +74,7 @@ def movie_names():
     return ret
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture()
 def mock_xseed_request():
     with mock.patch("deluge_control.xseed.XSeedClient.cross_seed") as mock_request:
         yield mock_request

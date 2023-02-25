@@ -167,5 +167,7 @@ def test_xseed_not_called_when_not_ready(
             client_torrents = deluge_client.decode_torrent_data(
                 deluge_client.get_torrents_status(*TORRENTS_STATUS_DEFAULT_ARGS)
             )
+            mock_xseed_request.assert_not_called()
+
             check_seeding_torrents(db_session, db_seeding_torrents, client_torrents)
             mock_xseed_request.assert_not_called()
