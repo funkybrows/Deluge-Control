@@ -51,15 +51,7 @@ class Torrent(Base):
         self.state = StateChoices(name)
 
 
-class TorrentRetry(Base):
-    __tablename__ = "torrent_retries"
-    id = Column(Integer, primary_key=True)
-    torrent_id = Column(ForeignKey("torrents.id", ondelete="CASCADE"))
-    count = Column(Integer, default=0)
-    last_check = Column(DateTime, default=dt.datetime.utcnow)
-
-    torrent = relationship("Torrent", back_populates="retries", single_parent=True)
-
+class GetOrCreateMixin:
     @classmethod
     def get_or_create(cls, session: Session, torrent_id: str):
         created = True
@@ -69,17 +61,17 @@ class TorrentRetry(Base):
             .first()
         )
         if (
-            torrent_retry := session.execute(
-                select(TorrentRetry).where(TorrentRetry.torrent_id == torrent_pk)
-            )
+            obj := session.execute(select(cls).where(cls.torrent_id == torrent_pk))
             .scalars()
             .first()
         ):
             created = False
         else:
-            session.add(torrent_retry := TorrentRetry(torrent_id=torrent_pk))
-        return torrent_retry, created
+            session.add(obj := cls(torrent_id=torrent_pk))
+        return obj, created
 
+
+class TorrentRetry(Base, GetOrCreateMixin):
 
 class TorrentSnapshot(Base):
     __tablename__ = "torrent_snapshots"
