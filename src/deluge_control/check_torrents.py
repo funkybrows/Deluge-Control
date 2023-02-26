@@ -103,7 +103,7 @@ def check_downloading_torrents(
     return db_downloading_torrents.values()
 
 
-def check_seeding_torrents(
+async def check_seeding_torrents(
     session: Session,
     db_seeding_torrents: Dict[str, Torrent],
     client_torrents: Dict[StateChoices, Dict[str, Union[str, int, float]]],
@@ -152,13 +152,13 @@ def check_seeding_torrents(
             xseed, _ = TorrentXSeed.get_or_create(session, torrent.torrent_id, count=0)
             if (xseed.count or 0) < torrent.MAX_XSEED_TRIES:
                 xseed_client = get_xseed_client()
-                xseed_client.cross_seed(torrent)
+                await xseed_client.cross_seed(torrent)
                 xseed.count += 1
         return new_torrent_snapshots
 
 
 # XXX: We'll eventually make the db operations async
-def check_torrents(deluge_client: DelugeClient, session: Session):
+async def check_torrents(deluge_client: DelugeClient, session: Session):
     db_torrents = split_ready_db_torrents_by_state(session)
     torrent_ids = []
     for grouped_torrents_info in db_torrents.values():
@@ -173,7 +173,9 @@ def check_torrents(deluge_client: DelugeClient, session: Session):
     check_downloading_torrents(
         deluge_client, session, db_torrents[StateChoices.DL], client_torrents
     )
-    check_seeding_torrents(session, db_torrents[StateChoices.SEED], client_torrents)
+    await check_seeding_torrents(
+        session, db_torrents[StateChoices.SEED], client_torrents
+    )
 
 
 async def check_continuously(default_interval=60):
@@ -187,7 +189,7 @@ async def check_continuously(default_interval=60):
             session = get_session()
             with session.begin() as db_session:
                 try:
-                    check_torrents(deluge_client, db_session)
+                    await check_torrents(deluge_client, db_session)
                 except:
                     logger.exception("ERROR: FAILED TO CHECK TORRENTS")
                     db_session.rollback()

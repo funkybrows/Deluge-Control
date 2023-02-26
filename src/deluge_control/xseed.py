@@ -1,3 +1,5 @@
+import aiohttp
+
 xseed_client = None
 
 
@@ -10,5 +12,8 @@ def get_xseed_client():
 
 class XSeedClient:
     @classmethod
-    def cross_seed(torrent):
-        pass
+    async def cross_seed(torrent):
+        async with aiohttp.ClientSession() as session:
+            async with session.post(f"http://cross-seed:2468") as response:
+                print("Status:", response.status)
+                html = await response.text()
