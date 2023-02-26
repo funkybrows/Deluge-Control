@@ -14,7 +14,6 @@ packages = [{include = "deluge_control", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-aiohttp = "*"
 sqlalchemy = "*"
 alembic = "^1.8"
 psycopg2 = "^2.9"
@@ -22,6 +21,7 @@ python-dateutil = "^2.8"
 deluge-client = "^1.9"
 aio-pika-wrapper = {git = "https://gitlab.com/jayd-tech/aio-pika-wrapper.git#v0.1.1"}
 pysftp = "~0.2.9"
+aiohttp = "^3.8.4"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "*"
