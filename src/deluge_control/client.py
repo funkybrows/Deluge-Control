@@ -3,6 +3,8 @@ import base64
 import logging
 import os
 import os.path
+from pathlib import Path
+from tenacity import retry, stop_after_attempt, wait_fixed
 from typing import Any, Dict, List
 
 from deluge_client import DelugeRPCClient
@@ -108,7 +110,7 @@ class DelugeClient:
         return approved
 
     def add_torrent_file_async(self, name, file_path=None, file_dump=None, **options):
-        if not file_path or file_dump:
+        if not (file_path or file_dump):
             raise ValueError("Either file path or dump required")
 
         if file_path:
@@ -135,6 +137,30 @@ class DelugeClient:
         )
 
         return self.client.call("core.add_torrent_url", file_url, add_options)
+
+    def batch_add_torrents(
+        self,
+        dir: Path,
+        add_paused: bool = True,
+        wait_duration: float = 5,
+        retries: int = 3,
+    ):
+        @retry(wait=wait_fixed(wait_duration), stop=stop_after_attempt(retries))
+        def _add_torrent(file_or_folder):
+            self.add_torrent_file_async(
+                file_or_folder.stem,
+                file_dump=file_or_folder.read_bytes(),
+                add_paused=add_paused,
+            )
+
+        if not (path := Path(dir)).exists() or not path.is_dir():
+            raise ValueError(f"{path} either DNE or is a file")
+        for file_or_folder in path.iterdir():
+            if file_or_folder.is_file():
+                logger.info(
+                    f"Adding torrent: {file_or_folder} with name: {file_or_folder.stem}, paused={add_paused}"
+                )
+                _add_torrent(file_or_folder)
 
     def force_reannounce(self, torrent_ids: List[str]):
         return self.client.call("core.force_reannounce", torrent_ids)
