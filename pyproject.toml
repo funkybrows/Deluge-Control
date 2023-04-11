@@ -22,6 +22,7 @@ deluge-client = "^1.9"
 aio-pika-wrapper = {git = "https://gitlab.com/jayd-tech/aio-pika-wrapper.git#v0.1.1"}
 pysftp = "~0.2.9"
 aiohttp = "^3.8.4"
+tenacity = "^8.2.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "*"
